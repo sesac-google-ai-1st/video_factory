@@ -1,9 +1,11 @@
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import *
 from moviepy.config import change_settings
+
 from mutagen.mp3 import MP3
 import datetime
 import os
+from moviepy.video.fx.all import *
 
 # change_settings(
 #     {"IMAGEMAGICK_BINARY": r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"}
@@ -16,6 +18,7 @@ def add_static_image_to_video(image_path, audio_path, output_path):
     image_files = os.listdir(image_path)
     audio_files = os.listdir(audio_path)
     clips = []
+    video_clips = []
 
     for image_file, audio_file in zip(image_files, audio_files):
         # 오디오 파일 로드
@@ -30,8 +33,21 @@ def add_static_image_to_video(image_path, audio_path, output_path):
         # 클립 리스트에 추가
         clips.append(video_clip)
 
+    for i in range(len(clips)):
+        clip = clips[i]
+        if i == 0:
+            slide_clip = transfx.slide_out(clip, 0.5, "left")
+            slide_clip = CompositeVideoClip([slide_clip], size=clip.size)
+            video_clips.append(slide_clip)
+        else:
+            slide_clip = CompositeVideoClip([transfx.slide_in(clip, 0.5, "right")])
+            slide_clip = CompositeVideoClip(
+                [transfx.slide_out(slide_clip, 0.5, "left")]
+            )
+            video_clips.append(slide_clip)
+
     # 모든 클립을 하나로 합치기
-    final_clip = concatenate_videoclips(clips, method="compose")
+    final_clip = concatenate_videoclips(video_clips, method="compose")
 
     # 결과 영상 파일 생성
     final_clip.write_videofile(output_path + "output_video.mp4", fps=24)
@@ -93,4 +109,4 @@ def subtitles(video_file, subtitle_file, output_path):
 
 
 add_static_image_to_video(img, audio, test)
-subtitles(video, subtitle, test)
+# subtitles(video, subtitle, test)
