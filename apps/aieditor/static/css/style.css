@@ -91,7 +91,7 @@ button:hover {
 
 /* 스크립트 박스 스타일 */
 .script-box {
-    width: 100%;
+    width: 98%;
     height: 100px; /* 고정 높이 */
     margin-top: 10px;
     border: 1px solid #ccc;
@@ -155,6 +155,25 @@ select:focus {
 
 .selected-subtopic {
     color: rgb(7, 7, 7);
+}
+
+.script-box-container {
+    margin-bottom: 10px;
+}
+
+.float-right {
+    float: right;
+}
+
+.script-box-container button {
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    margin-left: 5px;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1;
+    border: none;
 }
 
 /* 옵션 스타일링 */
