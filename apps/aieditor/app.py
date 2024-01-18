@@ -1,5 +1,5 @@
 from flask import Flask, render_template, stream_template
-from flask import request, Response
+from flask import request, Response, abort
 from apps.aieditor.func.chain import ScriptAssistant
 
 app = Flask(__name__)
@@ -62,7 +62,7 @@ def maintest():
                     """스크립트 생성을 위해 server-sent event stream을 생성합니다.
 
                     make_scripts함수가 stream으로 str chunk를 반환합니다.
-                    Gemini가 empty string을 생성하고 작동을 멈추는 경우가 있기때문에, 에러로 간주하고 종료합니다.
+                    Gemini가 empty string을 생성하고 작동을 멈추는 경우가 있기 때문에, 에러로 간주하고 종료합니다.
 
                     선택된 subtopic이 n개일 때 반복문을 돌며, n개의 script를 생성합니다.
                     각 script의 생성이 완료되면, "End of script"를 반환합니다.
@@ -73,17 +73,24 @@ def maintest():
                     Yields:
                         str: Chunks of generated scripts or error messages.
                     """
-                    for i in range(len(checkedNames)):
-                        for chunk in script_assistant_instance.make_scripts(
-                            user_input, str(i + 1)
-                        ):
-                            print(chunk)
-                            if chunk:
-                                yield chunk
-                            else:
-                                yield "\n\n ⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️The end"
-                        yield "End of script"
-                    yield "The end"
+                    try:
+                        for i in range(len(checkedNames)):
+                            for chunk in script_assistant_instance.make_scripts(
+                                user_input, str(i + 1)
+                            ):
+                                print(chunk)
+                                if chunk:
+                                    yield chunk
+                                else:
+                                    # Gemini가 empty string을 생성하고 작동을 멈추는 경우가 있기 때문에, 에러를 발생시킴
+                                    raise Exception("⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️")
+                            yield "End of script"
+                        yield "The end"
+                    except Exception as e:
+                        # 디버깅을 위해 exception 로깅
+                        print(f"Error: {e}")
+                        # client로 에러 메세지 전송
+                        yield "Error occurred: " + str(e)
 
                 return Response(event_stream(), mimetype="text/event-stream")
 
