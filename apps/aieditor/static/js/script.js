@@ -16,8 +16,43 @@ function getCheckedCheckboxNames() {
 }
 
 /**
+ * script-box-container를 위로 이동시키는 함수
+ * @param {HTMLElement} button - 클릭된 버튼 요소
+ */
+function moveUp(button) {
+  var container = button.parentNode;
+  var previous = container.previousElementSibling;
+  if (previous && previous.classList.contains("script-box-container")) {
+    container.parentNode.insertBefore(container, previous);
+  }
+}
+
+/**
+ * script-box-container를 아래로 이동시키는 함수
+ * @param {HTMLElement} button - 클릭된 버튼 요소
+ */
+function moveDown(button) {
+  var container = button.parentNode;
+  var next = container.nextElementSibling;
+  if (next && next.classList.contains("script-box-container")) {
+    container.parentNode.insertBefore(next, container);
+  }
+}
+
+/**
+ * script-box-container를 삭제하는 함수
+ * @param {HTMLElement} button - 클릭된 버튼 요소
+ */
+function deleteScriptBox(button) {
+  var container = button.parentNode;
+  container.parentNode.removeChild(container);
+}
+
+
+/**
  * 선택한 subtopic을 strong 요소에 담고, 
  * 그 subtopic에 해당하는 script를 담을 textarea를 만들어서 반환하는 함수.
+ * script-box-container의 위 아래 순서를 바꾸거나, 삭제하는 버튼을 추가하였습니다.
  * @param {Array} checkedNames - 선택된 체크박스의 names을 담은 리스트.
  * @param {number} index - script의 순서를 가리키는 인덱스. subtopic이 n개 선택된 경우, 그 중 몇번째인지 구분하는 역할.
  * @returns {HTMLTextAreaElement} 만들어진 textarea 요소.
@@ -25,16 +60,38 @@ function getCheckedCheckboxNames() {
 function createTextarea(checkedNames, index) {
   const scriptBoxes = document.querySelector('.script-boxes'); // 선택한 subtopic과 textarea가 표시될 부모 요소.
 
+  const divElement = document.createElement('div');
+  divElement.classList.add('script-box-container');
+  scriptBoxes.appendChild(divElement);
+
   const strongElement = document.createElement('strong');
   strongElement.classList.add('selected-subtopic');
   strongElement.innerHTML = document.getElementById(checkedNames[index]).innerText.substring(2).replace(/^\.+/g, '').trim(); // index번째 체크박스 name을 id로 가지는 요소의 innerText : subtopic 자체
-  scriptBoxes.appendChild(strongElement);
+  divElement.appendChild(strongElement);
+
+  const deleteButton = document.createElement("button");
+  deleteButton.classList.add('float-right');
+  deleteButton.innerHTML = "❌";
+  deleteButton.onclick = function() { deleteScriptBox(this); };
+  divElement.appendChild(deleteButton);
+
+  const moveDownButton  = document.createElement("button");
+  moveDownButton.classList.add('float-right');
+  moveDownButton.innerHTML = "🠗";
+  moveDownButton.onclick = function() { moveDown(this); };
+  divElement.appendChild(moveDownButton);
+
+  const moveUpButton = document.createElement("button");
+  moveUpButton.classList.add('float-right');
+  moveUpButton.innerHTML = "🠕";
+  moveUpButton.onclick = function() { moveUp(this); };
+  divElement.appendChild(moveUpButton);
 
   const textarea = document.createElement('textarea');
   textarea.classList.add('script-box');
   textarea.setAttribute("readonly", "true");  // 수정할 수 없게 설정
-  textarea.setAttribute('placeholder', `${index + 1}번째 스크립트를 생성 중입니다. 조금만 기다려주세요.`);
-  scriptBoxes.appendChild(textarea);
+  textarea.setAttribute('placeholder', `${index + 1}번째 스크립트를 생성 중입니다. 생성이 끝난 후 스크립트를 수정할 수 있습니다. 조금만 기다려주세요.`);
+  divElement.appendChild(textarea);
   return textarea;
 }
 
@@ -74,6 +131,7 @@ scriptform.addEventListener("submit", async (event) => {
 
   // response stream을 누적할 chunks 변수를 정의하고, 
   // createTextarea 함수로 chunks를 담을 textarea를 만듭니다.
+  let chunk = "";
   let chunks = "";
   let currentTextarea = createTextarea(checkedNames, currentTextareaIndex);
 
@@ -83,7 +141,16 @@ scriptform.addEventListener("submit", async (event) => {
     const { done, value } = await reader.read();
     if (done) break;
 
-    chunks += decoder.decode(value);
+    chunk = decoder.decode(value);
+
+    if (chunk.includes("Error occurred:")) {
+      // 서버에서 에러 메시지가 전송된 경우, alert으로 표시
+      chunk = chunk.replace("Error occurred:", "");
+      alert(chunk.trim());
+      break;
+    }
+
+    chunks += chunk;
 
     if (chunks.includes("End of script")) {   // 해당 주제에 관한 스크립트 생성이 끝난 경우,
       chunks = chunks.replace("End of script", "");
