@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>메인</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    </head>
+    <body>
+        <header class="main-header">
+            <h1>영상 스크립트 생성기</h1>
+        </header>
+        <form method="post" id="topic-form">
+            <input type="text" value="{{ user_input }}" placeholder="영상 주제를 입력하세요">
+            <button type="submit" name="mainbutton">주제 생성</button>
+        </form>
+    </body>
+</html>

@@ -7,9 +7,15 @@ app = Flask(__name__)
 subtopics = []
 script_assistant_instance = None
 
-
 @app.route("/", methods=["GET", "POST"])
-def maintest():
+def main():
+    return stream_template("main.html")
+
+
+
+
+@app.route("/subtopic", methods=["GET", "POST"])
+def subtopic():
     global subtopics
     global script_assistant_instance
 
@@ -89,7 +95,7 @@ def maintest():
 
     # 템플릿 스트림 렌더링. 변수들을 템플릿으로 전달
     return stream_template(
-        "maintest.html",
+        "subtopic.html",
         subtopics=subtopics,
         user_input=user_input,
         display_subtopics=display_subtopics,
