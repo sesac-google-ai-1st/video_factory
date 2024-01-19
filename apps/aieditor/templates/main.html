@@ -3,16 +3,44 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>메인</title>
+        <title>영상 생성기</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     </head>
     <body>
         <header class="main-header">
-            <h1>영상 스크립트 생성기</h1>
+            <h1>유튜브 영상 대본을 빠르게 작성해보세요!</h1>
         </header>
-        <form method="post" id="topic-form">
-            <input type="text" value="{{ user_input }}" placeholder="영상 주제를 입력하세요">
-            <button type="submit" name="mainbutton">주제 생성</button>
-        </form>
+        <div class="container">
+            <!-- 첫 번째 폼: 주제 생성 -->
+            <form method="post" id="topic-form">
+                <input type="text" id="user_input" name="user_input" value="{{ user_input }}" placeholder="영상 주제를 입력하세요. (ex. 북유럽신화)">
+                <select name="modelSelect" id="modelSelect" value="{{ selected_model }}">
+                    <option value="" disabled selected>모델 선택</option>
+                    <option value="GPT" {% if selected_model == 'GPT' %}selected{% endif %}>GPT</option>
+                    <option value="Gemini" {% if selected_model == 'Gemini' %}selected{% endif %}>Gemini</option>
+                </select>
+                <button type="submit" name="main-button">주제 생성</button>
+            </form>
+            <!-- 두 번째 폼: 소주제 생성 -->
+            <form method="post" id="subtopic-form" style="{% if not show_subtopic_form %}display: none;{% endif %}">
+                <!-- 인풋창의 내용을 유지하기 위해 숨겨진 필드 추가 -->
+                <input type="hidden" name="user_input" value="{{ user_input }}">
+                <input type="hidden" name="modelSelect" value="{{ selected_model }}"> <!-- 모델 안쓸거면 이 줄 필요없음 -->
+                <div class="maintopics-container">
+                    {% for i in range(1,11) %}
+                        {% if main_topics[i-1] %}
+                            <label>
+                                <div class="maintopic-item">
+                                    <input type="radio" name="maintopic" value="{{ main_topics[i-1] }}">
+                                    <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
+                                    <span class="maintopic-title" id="maintopic{{i}}">{{ main_topics[i-1] }}</span>
+                                </div>
+                            </label>
+                        {% endif %}
+                    {% endfor %}
+                    <button type="submit" name="sub-button" id="sub-button">대본 상세 구성하기</button>
+                </div>
+            </form>
+        </div>
     </body>
 </html>

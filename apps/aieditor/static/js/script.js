@@ -96,7 +96,6 @@ function createTextarea(checkedNames, index) {
 }
 
 
-const topicform = document.getElementById("topic-form");
 const scriptform = document.getElementById("script-form");
 
 //#region 이벤트
@@ -107,68 +106,75 @@ const scriptform = document.getElementById("script-form");
 scriptform.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  // topicform에서 user_input을, 
-  // getCheckedCheckboxNames로 선택된 체크박스의 names를 가져옵니다.
-  const user_input = topicform.elements.user_input.value;
+  // getCheckedCheckboxNames 함수로 선택된 체크박스의 names를 가져옵니다.
   const checkedNames = getCheckedCheckboxNames();
 
   let currentTextareaIndex = 0;
 
   // user_input, checkedNames으로 Flask server에 요청 보냅니다.
   // json형식으로 보냄
-  const response = await fetch("/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ user_input: user_input, button2: true, checkedNames: checkedNames }),
-  });
+  try {
+    const response = await fetch("/subtopic", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ script_button: true, checkedNames: checkedNames }),
+    });
 
-  // 스트리밍된 response 텍스트를 디코딩하기 위해 TextDecoder를 만듭니다.
-  const decoder = new TextDecoder();
-  // response body 읽기 위해 ReadableStream를 만듭니다.
-  const reader = response.body.getReader();
-
-  // response stream을 누적할 chunks 변수를 정의하고, 
-  // createTextarea 함수로 chunks를 담을 textarea를 만듭니다.
-  let chunk = "";
-  let chunks = "";
-  let currentTextarea = createTextarea(checkedNames, currentTextareaIndex);
-
-  
-  // response stream을 읽고 chunks에 누적하여 textarea에 추가합니다.
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    chunk = decoder.decode(value);
-
-    if (chunk.includes("Error occurred:")) {
-      // 서버에서 에러 메시지가 전송된 경우, alert으로 표시
-      chunk = chunk.replace("Error occurred:", "");
-      alert(chunk.trim());
-      break;
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    chunks += chunk;
+    // 스트리밍된 response 텍스트를 디코딩하기 위해 TextDecoder를 만듭니다.
+    const decoder = new TextDecoder();
+    // response body 읽기 위해 ReadableStream를 만듭니다.
+    const reader = response.body.getReader();
 
-    if (chunks.includes("End of script")) {   // 해당 주제에 관한 스크립트 생성이 끝난 경우,
-      chunks = chunks.replace("End of script", "");
-      if (chunks.includes("The end")) {   // 모든 스크립트 생성이 끝난 경우, break
-        chunks = chunks.replace("The end", "");
-        currentTextarea.value = chunks;
-        currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+    // response stream을 누적할 chunks 변수를 정의하고, 
+    // createTextarea 함수로 chunks를 담을 textarea를 만듭니다.
+    let chunk = "";
+    let chunks = "";
+    let currentTextarea = createTextarea(checkedNames, currentTextareaIndex);
+
+    
+    // response stream을 읽고 chunks에 누적하여 textarea에 추가합니다.
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      chunk = decoder.decode(value);
+
+      if (chunk.includes("Error occurred:")) {
+        // 서버에서 에러 메시지가 전송된 경우, alert으로 표시
+        chunk = chunk.replace("Error occurred:", "");
+        alert(chunk.trim());
         break;
       }
-      currentTextarea.value = chunks;
-      currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
-      currentTextareaIndex++;
-      currentTextarea = createTextarea(checkedNames, currentTextareaIndex);   // 다음 주제에 관한 스크립트를 넣을 textarea 생성
-      chunks = "";  // Reset chunks for the new textarea
-    } else {
-      currentTextarea.value = chunks;
-    }
-  };
+
+      chunks += chunk;
+
+      if (chunks.includes("End of script")) {   // 해당 주제에 관한 스크립트 생성이 끝난 경우,
+        chunks = chunks.replace("End of script", "");
+        if (chunks.includes("The end")) {   // 모든 스크립트 생성이 끝난 경우, break
+          chunks = chunks.replace("The end", "");
+          currentTextarea.value = chunks;
+          currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+          break;
+        }
+        currentTextarea.value = chunks;
+        currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+        currentTextareaIndex++;
+        currentTextarea = createTextarea(checkedNames, currentTextareaIndex);   // 다음 주제에 관한 스크립트를 넣을 textarea 생성
+        chunks = "";  // Reset chunks for the new textarea
+      } else {
+        currentTextarea.value = chunks;
+      }
+    };
+  } catch (error) {
+    console.error("Fetch error:", error);
+    // 여기에 적절한 오류 처리 로직 추가
+  }
 });
 //#endregion
 

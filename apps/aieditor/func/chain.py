@@ -17,26 +17,35 @@ from langchain_core.output_parsers import StrOutputParser
 class ScriptAssistant:
     def __init__(self, llm_name):
         # 번역하는 프롬프트
-        self.translate2ko_prompt = (
-            "Please translate text below into Korean. \n text: {text}"
-        )
+        self.translate2ko_prompt = "If the text below is in Korean, do nothing. If not, please translate it into Korean. There is no need to add an explanation. \n text: {text}"
+
+        # main topic 생성하는 프롬프트
+        # input: youtube topic
+        self.maintopic_prompt = """
+        <{youtube_topic}> 과 관련한 주제의 유튜브 채널을 운영 하려한다.
+        <{youtube_topic}> 과 관련한 흥미롭고 재미있는 영상 주제를 10개 제안해줘.
+        - 주제가 잘 드러나게 길게 작성해줘
+        - 추가 설명 없이 주제만 작성해줘
+        - "-" 표시 하지마
+        - "*" 표시 하지마
+        - 앞뒤에 아무말도 하지말고 딱 주제만 나열해줘
+        """
 
         # sub topic 생성하는 프롬프트
-        # input: main topic
+        # input: youtube_topic, main_topic
         self.subtopics_prompt = """
-        main topic: <{main_topic}>
-        If the main topic above is not in English, translate it into English and follow the instructions below.
+        If my requirements below are in a language other than English, please translate it into English, think about it, and answer in English.
 
-        I am planning to run a YouTube channel about main topic.
-        I'm looking to create a chronological content series about main topic.
+        I am planning to run a YouTube channel about <{youtube_topic}>.
+        I'm looking to create a chronological content series about <{youtube_topic}>
 
-        Video main topic: I plan to make a YouTube video on the main topic above.
+        Video main topic: I plan to make a YouTube video on the main topic "{main_topic}".
 
         List up 10 detailed titles (subtitles) for the above topic in order, with only one line break.
         """
 
         # 스크립트 생성하는 프롬프트
-        # inputs: n, main topic, sub topic list
+        # inputs: n, main_topic, sub_topic_list
 
         # GPT ( 버전 : gpt-3.5-turbo-1106 / gpt 4)
         self.gpt_script_prompt = """
@@ -96,18 +105,16 @@ class ScriptAssistant:
         """
 
         # Chat model 선택
-        if llm_name == "gpt":
+        if llm_name == "GPT":
             self.llm = ChatOpenAI(model_name="gpt-3.5-turbo-0301", temperature=1)
-            self.subtopics_prompt_ = self.subtopics_prompt
             self.script_prompt_ = self.gpt_script_prompt
-        elif llm_name == "gemini":
+        elif llm_name == "Gemini":
             self.llm = ChatGoogleGenerativeAI(
                 model="gemini-pro",
                 temperature=1,
                 convert_system_message_to_human=True,
                 # client=safety_settings,
             )
-            self.subtopics_prompt_ = self.subtopics_prompt
             self.script_prompt_ = self.gemini_script_prompt
         else:
             raise ValueError(
@@ -115,19 +122,22 @@ class ScriptAssistant:
             )
 
         # prompt templates
-        self.subtopics_prompt_template = ChatPromptTemplate.from_messages(
+        self.maintopic_prompt_template = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
-                    "You are a helpful helper who knows a lot of interesting topics for YouTube videos.",
+                    "당신은 YouTube 동영상에 대한 흥미로운 주제를 많이 알고 있는 유용한 도우미입니다.",
                 ),
-                HumanMessagePromptTemplate.from_template(self.subtopics_prompt_),
+                HumanMessagePromptTemplate.from_template(self.maintopic_prompt),
             ]
+        )
+
+        self.subtopics_prompt_template = ChatPromptTemplate.from_template(
+            self.subtopics_prompt
         )
 
         self.script_prompt_template = ChatPromptTemplate.from_messages(
             [
-                # ("system", "You are a helpful assistant in writing YouTube scripts."),
                 MessagesPlaceholder(variable_name="chat_history"),
                 HumanMessagePromptTemplate.from_template(self.script_prompt_),
             ]
@@ -150,7 +160,15 @@ class ScriptAssistant:
         self.output_parser = StrOutputParser()
 
         # chain
-        # sub 주제 생성 chain - 메모리 X
+        # sub 주제 생성 chain
+        self.maintopic_chain = LLMChain(
+            llm=self.llm,
+            prompt=self.maintopic_prompt_template,
+            # verbose=True,
+            output_key="text",
+        )
+
+        # sub 주제 생성 chain
         self.subtopic_chain = LLMChain(
             llm=self.llm,
             prompt=self.subtopics_prompt_template,
@@ -167,7 +185,7 @@ class ScriptAssistant:
             output_key="text",
         )
 
-        # translate chain - 메모리 X
+        # translate chain
         self.translate_chain = (
             self.translate2ko_prompt_template
             | ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
@@ -178,7 +196,17 @@ class ScriptAssistant:
             self.generate_script_chain | self.translate_chain | self.output_parser
         )  # stream을 위해 output_parser 추가
 
-    def make_subtopics(self, user_input):
+    def make_maintopic(self, user_input):
+        self.main_list = self.maintopic_chain.invoke({"youtube_topic": user_input})
+        print(self.main_list)
+        self.main_list = [  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
+            sen.split(".")[1].strip()
+            for sen in self.main_list["text"].split("\n")
+            if "." in sen
+        ]
+        return self.main_list
+
+    def make_subtopics(self, user_input, main_topic):
         """주제를 입력받아, subtopic 리스트를 반환하는 함수입니다.
 
         subtopic_chain은 subtopic 영어 문자열을 반환합니다. (en_result)
@@ -192,7 +220,9 @@ class ScriptAssistant:
         Returns:
             list: 한글 subtopic 리스트
         """
-        self.en_result = self.subtopic_chain.invoke({"main_topic": user_input})
+        self.en_result = self.subtopic_chain.invoke(
+            {"youtube_topic": user_input, "main_topic": main_topic}
+        )
         self.en_list = [  # 문자열에서 "n.~" 이외는 다 제거함
             sen.strip()
             for sen in self.en_result["text"].split("\n")
