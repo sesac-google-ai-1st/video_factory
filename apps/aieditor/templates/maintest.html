@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Subtopic Display</title>
+        <title>영상 스크립트 생성기</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     </head>
     <body>
@@ -14,8 +14,8 @@
             <!-- 왼쪽 섹션 -->
             <div class="left-section">
                 <!-- 첫 번째 폼: 소주제 표시 -->
-                <form method="post">
-                    <input type="text" name="user_input" value="{{ user_input }}" placeholder="영상 주제를 입력하세요">
+                <form method="post" id="topic-form">
+                    <input type="text" id="user_input" name="user_input" value="{{ user_input }}" placeholder="영상 주제를 입력하세요">
                     <select name="modelSelect">
                         <option value="" disabled selected>모델을 선택하시오</option>
                         <option value="gpt">gpt</option>
@@ -25,18 +25,19 @@
                 </form>
                 
                 <!-- 두 번째 폼: 스크립트 생성 -->
-                <form method="post">
+                <form method="post" id="script-form">
                     <!-- 인풋창의 내용을 유지하기 위해 숨겨진 필드 추가 -->
                     <input type="hidden" name="user_input" value="{{ user_input }}">
                     <div class="subtopics-container">
                         {% for i in range(1, 11) %}
                             <div class="subtopic-item">
+                                <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
                                 {% if display_subtopics %}
-                                    <span class="subtopic-title">{{ subtopics[i-1] }}</span>
+                                    <span class="subtopic-title" id="subtopic{{i}}">{{ subtopics[i-1] }}</span>
                                 {% else %}
                                     <span class="subtopic-title"></span>
                                 {% endif %}
-                                <input type="checkbox" class="subtopic-checkbox" name="subtopic{{ i }}" {{ checkbox_states.get('subtopic' ~ i, '') }}>
+                                <input type="checkbox" class="subtopic-checkbox" name="subtopic{{ i }}">
                             </div>
                         {% endfor %}
                     </div>
@@ -47,14 +48,11 @@
             <div class="right-section">
                 <div class="selected-subtopic"><h3>영상 스크립트 </h3></div>
                 <div class="script-boxes">
-                    {% for i in range(1, 11) %}
-                        {% if checkbox_states.get('subtopic' ~ i, '') %}
-                            <strong class="selected-subtopic">{{ subtopics[i-1] }}</strong> <!-- 소주제 제목 표시 -->
-                            <textarea class="script-box" rows="4">{{ selected_scripts[i-1] }}</textarea>
-                        {% endif %}
-                    {% endfor %}
+                    <!-- 이곳에 선택한 subtopic과 textarea가 표시됩니다. -->
                 </div>
             </div>
         </div>
+        <script src="{{ url_for('static', filename='js/script.js') }}">
+        </script>
     </body>
 </html>

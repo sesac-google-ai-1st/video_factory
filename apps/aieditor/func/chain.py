@@ -3,43 +3,39 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from langchain.chains import LLMChain
 
-from langchain.prompts import ChatPromptTemplate
+from langchain.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
 from langchain.memory import ConversationSummaryBufferMemory
-from langchain.prompts import MessagesPlaceholder
-
-import os
-from dotenv import find_dotenv, load_dotenv
-import openai
-import google.generativeai as genai
-
-
-# _ = load_dotenv(find_dotenv())  # read local .env file
-# openai.api_key = os.environ["OPENAI_API_KEY"]
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
 
 class ScriptAssistant:
     def __init__(self, llm_name):
-        # 번역하는 프롬프트 템플릿
+        # 번역하는 프롬프트
         self.translate2ko_prompt = (
             "Please translate text below into Korean. \n text: {text}"
         )
-        self.translate2en_prompt = (
-            "Please translate text below into English. \n text: {text}"
-        )
 
-        # sub topic 생성하는 프롬프트 템플릿
+        # sub topic 생성하는 프롬프트
         # input: main topic
         self.subtopics_prompt = """
-        I am planning to run a YouTube channel about {main topic}.
-        I'm looking to create a chronological content series about {main topic}.
+        main topic: <{main_topic}>
+        If the main topic above is not in English, translate it into English and follow the instructions below.
 
-        Video main topic: I plan to make a YouTube video on the topic '{main topic}'
+        I am planning to run a YouTube channel about main topic.
+        I'm looking to create a chronological content series about main topic.
 
-        Request: Please just write 10 detailed titles (sub-titles) for the above topic. Line break only once.
-        output format = n. sub titles
+        Video main topic: I plan to make a YouTube video on the main topic above.
+
+        List up 10 detailed titles (subtitles) for the above topic in order, with only one line break.
         """
 
-        # 스크립트 생성하는 프롬프트 템플릿
+        # 스크립트 생성하는 프롬프트
         # inputs: n, main topic, sub topic list
 
         # GPT ( 버전 : gpt-3.5-turbo-1106 / gpt 4)
@@ -49,11 +45,11 @@ class ScriptAssistant:
         First, please write only the script for detailed topic number {n}.
 
         Video main topic
-        : {main topic}
+        : {main_topic}
 
         video details topic
 
-        {sub topic list}
+        {sub_topic_list}
 
         Writing guide
 
@@ -61,19 +57,18 @@ class ScriptAssistant:
         2. Don’t distinguish between scenes (don’t even write scene distinction phrases)
         3. I also distinguish between intro and body text (don’t even write the text).
         4. Just write the script
-        5. Please write as long as possible
+        5. Use at least 800 characters.
         """
 
         # Gemini
         self.gemini_script_prompt = """
-
         Your mission is to create a script that will be used for video production.
         Describe a story about the main and sub-topics.
         I've marked the technical facts as technical fact sheet.
 
-        main topic: {main topic}
+        main topic: {main_topic}
         sub topics: 
-        {sub topic list}
+        {sub_topic_list}
 
         Technical specification:
 
@@ -86,7 +81,7 @@ class ScriptAssistant:
         6. Exclude narrator and commentator phrases. \
         7. Do not write " and () and - and special characters. \
         8. Do not distinguish between scenes. \
-        9. I don't even write anything that describes the scene. \
+        9. Do not  even write anything that describes the scene. \
         10. Do not separate chapters. \
         11. no : do not ask questions \
         12. Write a paragraph by sub-title. \
@@ -94,7 +89,7 @@ class ScriptAssistant:
         14. Even clauses or examples are not presented as a list, but are written in a tightrope.    \
 
         Just write about subtopic number {n}.
-        Write a lot of length with a string.
+        Use at least 800 characters.
 
         output format = n. sub_topics \n text
         {human_input}
@@ -119,13 +114,14 @@ class ScriptAssistant:
                 "Invalid llm_name. Supported values are 'gpt' and 'gemini'."
             )
 
+        # prompt templates
         self.subtopics_prompt_template = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
                     "You are a helpful helper who knows a lot of interesting topics for YouTube videos.",
-                ),  # simple
-                ("user", self.subtopics_prompt_),
+                ),
+                HumanMessagePromptTemplate.from_template(self.subtopics_prompt_),
             ]
         )
 
@@ -133,21 +129,15 @@ class ScriptAssistant:
             [
                 # ("system", "You are a helpful assistant in writing YouTube scripts."),
                 MessagesPlaceholder(variable_name="chat_history"),
-                ("user", self.script_prompt_),
+                HumanMessagePromptTemplate.from_template(self.script_prompt_),
             ]
         )
 
-        self.translate2ko_prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("user", self.translate2ko_prompt),
-            ]
-        )
-        self.translate2en_prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("user", self.translate2en_prompt),
-            ]
+        self.translate2ko_prompt_template = ChatPromptTemplate.from_template(
+            self.translate2ko_prompt
         )
 
+        # memory
         self.memory = ConversationSummaryBufferMemory(
             llm=self.llm,
             max_token_limit=800,
@@ -156,12 +146,16 @@ class ScriptAssistant:
             input_key="human_input",
         )
 
+        # output parser
+        self.output_parser = StrOutputParser()
+
+        # chain
         # sub 주제 생성 chain - 메모리 X
-        self.generate_subtopics_chain = LLMChain(
+        self.subtopic_chain = LLMChain(
             llm=self.llm,
             prompt=self.subtopics_prompt_template,
             # verbose=True,
-            # memory=memory   ###
+            output_key="text",
         )
 
         # script 생성 chain - 메모리 O
@@ -169,43 +163,85 @@ class ScriptAssistant:
             llm=self.llm,
             prompt=self.script_prompt_template,
             # verbose=True,
-            memory=self.memory,  ###
+            memory=self.memory,  #
+            output_key="text",
         )
 
         # translate chain - 메모리 X
-        self.translate_chain = LLMChain(
-            llm=ChatGoogleGenerativeAI(  ########
-                model="gemini-pro", temperature=0, convert_system_message_to_human=True
-            ),
-            prompt=self.translate2ko_prompt_template,
+        self.translate_chain = (
+            self.translate2ko_prompt_template
+            | ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
         )
+        # parsing을 위해 return 값 알아두기 : AIMessage(content='blah')
 
-        self.ko2en_generate_subtopics_chain = (
-            self.translate2en_prompt_template | self.generate_subtopics_chain
-        )
-
-        self.script_chain = self.generate_script_chain | self.translate_chain
+        self.script_chain = (
+            self.generate_script_chain | self.translate_chain | self.output_parser
+        )  # stream을 위해 output_parser 추가
 
     def make_subtopics(self, user_input):
-        self.en_result = self.ko2en_generate_subtopics_chain.invoke(
-            {"text": user_input}
-        )
-        self.en_list = list(
-            map(lambda x: x.strip(), self.en_result["text"].split("\n"))
-        )
+        """주제를 입력받아, subtopic 리스트를 반환하는 함수입니다.
 
-        self.ko_result = self.translate_chain.invoke({"text": self.en_result["text"]})
+        subtopic_chain은 subtopic 영어 문자열을 반환합니다. (en_result)
+        가끔 subtopic 이외의 말을 덧붙이거나 줄바꿈을 여러번하는 경우가 있기 때문에 리스트로 변환하는 과정에서 후처리를 해줍니다. (en_list)
+        이를 translate_chain에 입력으로 넣으면, subtopic 한글 문자열을 반환합니다. (ko_result)
+        마지막으로 subtopic 한글 문자열을 한글 리스트로 변환합니다. (ko_list)
+
+        Args:
+            user_input (str): 사용자가 input form에 입력한 영상 주제
+
+        Returns:
+            list: 한글 subtopic 리스트
+        """
+        self.en_result = self.subtopic_chain.invoke({"main_topic": user_input})
+        self.en_list = [  # 문자열에서 "n.~" 이외는 다 제거함
+            sen.strip()
+            for sen in self.en_result["text"].split("\n")
+            if any(map(lambda x: x == ".", sen[1:3]))
+        ]
+
+        self.ko_result = self.translate_chain.invoke({"text": "\n".join(self.en_list)})
+
         self.ko_list = list(
-            map(lambda x: x.strip(), self.ko_result["text"].split("\n"))
+            map(lambda x: x.strip(), self.ko_result.content.split("\n"))
         )
+        ########번역 chain을 invoke 대신 batch를 사용##########
+        # self.en_list_batch = list(map(lambda x: {"text": x}, self.en_list))
+        # print(self.en_list_batch)
+        # self.ko_list = self.translate_chain.batch(self.en_list_batch)
+        #########시간을 측정해보니 더 오래걸림##########
 
         return self.ko_list
 
     def select_subtopics(self, selected_idx):
+        """index를 받아서, index에 해당하는 subtopic을 반환하는 함수입니다.
+
+        여기서 만든 en_selected_list는 변수로 저장되었다가, make_scripts 함수에 바로 입력됩니다.
+
+        Args:
+            selected_idx (list): 사용자가 화면에서 선택한 체크박스의 index 리스트
+
+        Returns:
+            list: 선택된 index에 해당하는 영어 subtopic을 담은 리스트
+        """
         self.en_selected_list = [self.en_list[i - 1] for i in selected_idx]
+
         return self.en_selected_list
 
-    def make_scripts(self, user_input, selected_list, n):
+    def make_scripts(self, user_input, n):
+        """주제와 몇번째 subtopic인지를 입력 받아서, 해당 subtopic에 맞는 script를 생성하는 함수입니다.
+
+        위의 select_subtopic 함수에서 만든 en_selected_list의 번호를 다시 매겨준 후, (selected_list_reset_index)
+        script chain에 input으로 집어넣습니다. 번호를 1번부터 다시 매겼기 때문에, n 번째 subtopic에 관한 script를 작성할 수 있습니다.
+        각 subtopic마다 script를 생성하는 이유는, 풍부한 내용을 얻기 위한 것입니다.
+        또한, 이전에 생성한 script 내용과 중복을 피하고, 문체의 일관성을 위해, script_chain에 memory를 사용하였습니다.
+
+        Args:
+            user_input (str): 사용자가 input form에 입력한 영상 주제
+            n (str): 여러개의 subtopic 중 몇번째 subtopic에 관한 script를 작성할지 지정
+
+        Returns:
+            generator: script의 chunk를 담은 generator
+        """
         self.selected_list_reset_index = list(
             map(
                 lambda x, i: str(i) + "." + x.split(" ", 1)[1],
@@ -216,9 +252,9 @@ class ScriptAssistant:
 
         self.data = {
             "human_input": "",
-            "n": n,  ### 반복문 돌릴 거임
-            "main topic": user_input,
-            "sub topic list": self.selected_list_reset_index,
+            "n": n,  # 반복문 돌리며 n번째 subtopic에 해당되는 script 생성
+            "main_topic": user_input,
+            "sub_topic_list": self.selected_list_reset_index,
         }
-        self.ko_script = self.script_chain.invoke(self.data)
-        return self.ko_script["text"]
+
+        return self.script_chain.stream(self.data)
