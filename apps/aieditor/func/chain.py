@@ -207,13 +207,14 @@ class ScriptAssistant:
         Returns:
             list: 한글 main topic 리스트
         """
-        self.main_list = self.maintopic_chain.invoke({"youtube_topic": user_input})
-        print(self.main_list)
-        self.main_list = [  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
-            sen.split(".")[1].strip()
-            for sen in self.main_list["text"].split("\n")
-            if "." in sen
-        ]
+        self.main_dic = self.maintopic_chain.invoke({"youtube_topic": user_input})
+        print(self.main_dic)
+        self.main_list = []  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
+        for sen in self.main_dic["text"].split("\n"):
+            if "." in sen:
+                self.main_list.append(sen.split(".")[1].strip())
+            elif sen != "":
+                self.main_list.append(sen)
         return self.main_list
 
     def make_subtopics(self, user_input, main_topic):
