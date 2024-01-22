@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>영상 생성기</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     </head>
     <body>
         <header class="main-header">
@@ -26,7 +27,8 @@
                             <div class="subtopic-item">
                                 <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
                                 <span class="subtopic-title" id="subtopic{{i}}">{{ subtopics[i-1] }}</span>
-                                <input type="checkbox" class="subtopic-checkbox" name="subtopic{{ i }}">
+                                <input type="checkbox" class="subtopic-checkbox" id="test{{i}}" name="subtopic{{i}}"/>
+                                <label for="test{{i}}"></label>
                             </div>
                         {% endfor %}
                     </div>
