@@ -78,10 +78,10 @@ button:hover {
     display: flex;
     align-items: center;
     margin: 10px 0;
-    border: 1px solid #ddd;
+    border: 1px solid #fff;
     padding: 10px;
     border-radius: 4px;
-    background-color: #f8f8f8;
+    background-color: #f5f9ff;
 }
 
 .subtopic-title, .maintopic-title {
@@ -195,4 +195,26 @@ option {
 
 #topic-form .flash-message {
     padding-left: 3%;
+}
+
+/* 체크박스 스타일링 */
+/*input 은 숨겨주기*/
+input[type=checkbox]{
+display:none;
+}
+  /*input 바로 다음의 label*/
+input[type=checkbox] + label{
+padding-left: 25px;
+position: relative;
+cursor:pointer;
+}
+  
+  /*input 바로 다음의 label:before 에 체크하기 전 CSS 설정*/
+input[type=checkbox] + label:before{
+content: '';display: block;width: 15px;height: 15px;border-radius: 3px;position: absolute;top: 50%;margin-top: -9px;left: 0;border: 1px solid #0594fa;/*체크 전과 체크 후 높이 차이 때문에 설정*/
+}
+    
+  /*checked된 input 바로 다음의 label:before 에 체크 후 CSS 설정*/  
+input[type=checkbox]:checked + label:before{
+border-color: #000;font-family: 'Font Awesome 5 Free';content: '\f00c';color: #0594fa;font-weight: bold;text-align: center;font-size: 13px;line-height: 15px; border: 1px solid #0594fa;
 }
