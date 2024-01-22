@@ -21,6 +21,7 @@
                     <option value="Gemini" {% if selected_model == 'Gemini' %}selected{% endif %}>Gemini</option>
                 </select>
                 <button type="submit" name="main-button">주제 생성</button>
+                <!-- 영상 주제 / 모델이 없다면 flash가 나타납니다. -->
                 {% with messages = get_flashed_messages() %}
                     {% if messages and 'main-button' in request.form %}
                         {% for message in messages %}
@@ -47,6 +48,7 @@
                             </label>
                         {% endif %}
                     {% endfor %}
+                    <!-- 선택된 main topic이 없다면 flash가 나타납니다. -->
                     {% with messages = get_flashed_messages() %}
                         {% if messages and 'sub-button' in request.form %}
                             <div class="flash-message">

@@ -36,6 +36,7 @@ def main():
 
             # "주제" 버튼이 눌린 경우
             if "main-button" in request.form:
+                # 영상 주제 / 모델이 없다면 입력 혹은 선택하라고 사용자에게 피드백 flash
                 if not user_input or not selected_model:
                     flash(
                         "🚨 영상 주제를 입력해주세요❗" if not user_input else "🚨 모델을 선택해주세요❗",
@@ -58,6 +59,7 @@ def main():
                 # 선택한 maintopic
                 selected_maintopic = request.form.get("maintopic")
 
+                # 선택된 main topic이 없다면 선택하라고 사용자에게 피드백 flash
                 if not selected_maintopic:
                     flash("🚨 메인 주제들 중 하나를 선택해주세요❗", "error")
                     show_subtopic_form = True
@@ -101,18 +103,19 @@ def subtopic():
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
         if request.json["script_button"]:
+            # checkedNames : 선택된 체크박스의 name(subtopic{i})들을 리스트로 반환(script.js의 getCheckedCheckboxNames 참고)
             checkedNames = request.json["checkedNames"]
             print(checkedNames)
-            # checkedNames : 선택된 체크박스의 name(subtopic{i})들을 리스트로 반환(script.js의 getCheckedCheckboxNames 참고)
 
             # ScriptAssistant 인스턴스가 생성되어 있을 경우에만 make_scripts 호출
             if script_assistant_instance:
+                # selected_idx : subtopic{i}의 숫자"i"만 추출
                 selected_idx = list(map(lambda name: int(name[8:]), checkedNames))
                 print(selected_idx)
-                # selected_idx : subtopic{i}의 숫자"i"만 추출
 
+                # selected_list : selected_idx에 해당하는 영어 subtopic
                 selected_list = script_assistant_instance.select_subtopics(selected_idx)
-                print(selected_list)  # selected_idx에 해당하는 영어 subtopic
+                print(selected_list)
 
                 # 선택된 소주제에 대한 스크립트 생성
                 def event_stream():
