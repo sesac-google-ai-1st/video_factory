@@ -11,6 +11,7 @@
             <h1>유튜브 영상 대본을 빠르게 작성해보세요!</h1>
         </header>
         <div class="container">
+            
             <!-- 첫 번째 폼: 주제 생성 -->
             <form method="post" id="topic-form">
                 <input type="text" id="user_input" name="user_input" value="{{ user_input }}" placeholder="영상 주제를 입력하세요. (ex. 북유럽신화)">
@@ -20,24 +21,41 @@
                     <option value="Gemini" {% if selected_model == 'Gemini' %}selected{% endif %}>Gemini</option>
                 </select>
                 <button type="submit" name="main-button">주제 생성</button>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages and 'main-button' in request.form %}
+                        {% for message in messages %}
+                            <span class="flash-message">{{ message }}</span>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
             </form>
             <!-- 두 번째 폼: 소주제 생성 -->
             <form method="post" id="subtopic-form" style="{% if not show_subtopic_form %}display: none;{% endif %}">
                 <!-- 인풋창의 내용을 유지하기 위해 숨겨진 필드 추가 -->
                 <input type="hidden" name="user_input" value="{{ user_input }}">
-                <input type="hidden" name="modelSelect" value="{{ selected_model }}"> <!-- 모델 안쓸거면 이 줄 필요없음 -->
+                <input type="hidden" name="modelSelect" value="{{ selected_model }}">
                 <div class="maintopics-container">
                     {% for i in range(1,11) %}
+                        <!-- main_topics이 10이하인 경우, 생성된 것만 표시합니다. -->
                         {% if main_topics[i-1] %}
                             <label>
                                 <div class="maintopic-item">
                                     <input type="radio" name="maintopic" value="{{ main_topics[i-1] }}">
-                                    <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
+                                    <!-- 이곳에 생성된 maintopic들이 표시됩니다. -->
                                     <span class="maintopic-title" id="maintopic{{i}}">{{ main_topics[i-1] }}</span>
                                 </div>
                             </label>
                         {% endif %}
                     {% endfor %}
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages and 'sub-button' in request.form %}
+                            <div class="flash-message">
+                                {% for message in messages %}
+                                    <p>{{ message }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
                     <button type="submit" name="sub-button" id="sub-button">대본 상세 구성하기</button>
                 </div>
             </form>

@@ -13,21 +13,22 @@
         <div class="full-width-section">
             <!-- 왼쪽 섹션 -->
             <div class="left-section">
-
+                <!-- main.html에서 사용자가 입력하고 선택한 정보들 표시 -->
                 <h3>입력한 영상 키워드: {{ user_input }}</h3>
                 <h3>선택한 메인 주제: {{ selected_maintopic }}</h3>
-                
                 <!-- 스크립트 생성 폼 -->
                 <form method="post" id="script-form">
                     <!-- 인풋창의 내용을 유지하기 위해 숨겨진 필드 추가 -->
                     <input type="hidden" name="user_input" value="{{ user_input }}">
                     <div class="subtopics-container">
                         {% for i in range(1, 11) %}
-                            <div class="subtopic-item">
-                                <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
-                                <span class="subtopic-title" id="subtopic{{i}}">{{ subtopics[i-1] }}</span>
-                                <input type="checkbox" class="subtopic-checkbox" name="subtopic{{ i }}">
-                            </div>
+                            <label>
+                                <div class="subtopic-item">
+                                    <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
+                                    <span class="subtopic-title" id="subtopic{{i}}">{{ subtopics[i-1] }}</span>
+                                    <input type="checkbox" class="subtopic-checkbox" name="subtopic{{ i }}">
+                                </div>
+                            </label>    
                         {% endfor %}
                     </div>
                     <button type="submit" name="script-button" id="script-button">스크립트 생성</button>

@@ -160,7 +160,7 @@ class ScriptAssistant:
         self.output_parser = StrOutputParser()
 
         # chain
-        # sub 주제 생성 chain
+        # main 주제 생성 chain
         self.maintopic_chain = LLMChain(
             llm=self.llm,
             prompt=self.maintopic_prompt_template,
@@ -197,6 +197,16 @@ class ScriptAssistant:
         )  # stream을 위해 output_parser 추가
 
     def make_maintopic(self, user_input):
+        """사용자에게 주제를 입력받아, main topic을 생성하는 함수입니다.
+
+        maintopic_chain은 대부분 순서를 매긴 문자열을 생성하기 때문에, 번호 및 줄바꿈을 제거하는 후처리를 해줍니다.
+
+        Args:
+            user_input (str): 사용자가 topic-form에 입력한 영상 주제
+
+        Returns:
+            list: 한글 main topic 리스트
+        """
         self.main_list = self.maintopic_chain.invoke({"youtube_topic": user_input})
         print(self.main_list)
         self.main_list = [  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
@@ -207,12 +217,12 @@ class ScriptAssistant:
         return self.main_list
 
     def make_subtopics(self, user_input, main_topic):
-        """주제를 입력받아, subtopic 리스트를 반환하는 함수입니다.
+        """선택한 main topic에 관한 subtopic들을 생성하는 함수입니다.
 
         subtopic_chain은 subtopic 영어 문자열을 반환합니다. (en_result)
         가끔 subtopic 이외의 말을 덧붙이거나 줄바꿈을 여러번하는 경우가 있기 때문에 리스트로 변환하는 과정에서 후처리를 해줍니다. (en_list)
         이를 translate_chain에 입력으로 넣으면, subtopic 한글 문자열을 반환합니다. (ko_result)
-        마지막으로 subtopic 한글 문자열을 한글 리스트로 변환합니다. (ko_list)
+        마지막으로 subtopic 한글 문자열을 리스트로 변환합니다. (ko_list)
 
         Args:
             user_input (str): 사용자가 input form에 입력한 영상 주제
@@ -243,9 +253,11 @@ class ScriptAssistant:
         return self.ko_list
 
     def select_subtopics(self, selected_idx):
-        """index를 받아서, index에 해당하는 subtopic을 반환하는 함수입니다.
+        """선택한 subtopic의 index를 받아서, index에 해당하는 subtopic을 반환하는 함수입니다.
 
-        여기서 만든 en_selected_list는 변수로 저장되었다가, make_scripts 함수에 바로 입력됩니다.
+        script_chain의 프롬프트가 영어이기 때문에, subtopic도 영어로 넣어주기 위해 필요한 함수입니다.
+        이 함수가 만든 en_selected_list는 선택한 subtopic의 영어 문자열을 담고 있습니다.
+        이는 변수로 저장되었다가, make_scripts 함수에 바로 입력됩니다.
 
         Args:
             selected_idx (list): 사용자가 화면에서 선택한 체크박스의 index 리스트
@@ -257,16 +269,17 @@ class ScriptAssistant:
 
         return self.en_selected_list
 
-    def make_scripts(self, user_input, n):
-        """주제와 몇번째 subtopic인지를 입력 받아서, 해당 subtopic에 맞는 script를 생성하는 함수입니다.
+    def make_scripts(self, main_topic, selected_list, n):
+        """주제, 선택한 subtopic 리스트, 번호를 입력 받아서, 해당 번호에 맞는 script를 생성하는 함수입니다.
 
-        위의 select_subtopic 함수에서 만든 en_selected_list의 번호를 다시 매겨준 후, (selected_list_reset_index)
+        selected_list의 번호를 다시 매겨준 후, (selected_list_reset_index)
         script chain에 input으로 집어넣습니다. 번호를 1번부터 다시 매겼기 때문에, n 번째 subtopic에 관한 script를 작성할 수 있습니다.
         각 subtopic마다 script를 생성하는 이유는, 풍부한 내용을 얻기 위한 것입니다.
         또한, 이전에 생성한 script 내용과 중복을 피하고, 문체의 일관성을 위해, script_chain에 memory를 사용하였습니다.
 
         Args:
-            user_input (str): 사용자가 input form에 입력한 영상 주제
+            main_topic (str): 사용자가 선택한 main_topic
+            selected_list (list): 사용자가 선택한 subtopic의 영어 문자열을 담고 있는 리스트
             n (str): 여러개의 subtopic 중 몇번째 subtopic에 관한 script를 작성할지 지정
 
         Returns:
@@ -275,15 +288,15 @@ class ScriptAssistant:
         self.selected_list_reset_index = list(
             map(
                 lambda x, i: str(i) + "." + x.split(" ", 1)[1],
-                self.en_selected_list,
-                range(1, len(self.en_selected_list) + 1),
+                selected_list,
+                range(1, len(selected_list) + 1),
             )
         )
 
         self.data = {
             "human_input": "",
             "n": n,  # 반복문 돌리며 n번째 subtopic에 해당되는 script 생성
-            "main_topic": user_input,
+            "main_topic": main_topic,
             "sub_topic_list": self.selected_list_reset_index,
         }
 

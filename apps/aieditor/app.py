@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from flask import request, Response, url_for, redirect, session
+from flask import request, Response, url_for, redirect, session, flash
 from apps.aieditor.func.chain import ScriptAssistant
 
 app = Flask(__name__)
@@ -23,6 +23,7 @@ def main():
     # subtopic-form을 보여줄지 여부를 저장하는 변수
     show_subtopic_form = False
 
+    # 사용자가 선택한 LLM 모델
     selected_model = None
 
     # POST 요청 처리
@@ -31,39 +32,51 @@ def main():
         print("request.form:", request.form)
         if request.form:
             user_input = request.form.get("user_input")
-            selected_model = request.form["modelSelect"]
+            selected_model = request.form.get("modelSelect")
 
             # "주제" 버튼이 눌린 경우
             if "main-button" in request.form:
-                # ScriptAssistant 인스턴스 생성 또는 업데이트
-                script_assistant_instance = ScriptAssistant(selected_model)
+                if not user_input or not selected_model:
+                    flash(
+                        "🚨 영상 주제를 입력해주세요❗" if not user_input else "🚨 모델을 선택해주세요❗",
+                        "error",
+                    )
+                else:
+                    # ScriptAssistant 인스턴스 생성 또는 업데이트
+                    script_assistant_instance = ScriptAssistant(selected_model)
 
-                # ScriptAssistant 인스턴스가 생성되어 있을 경우에만 make_subtopics 호출
-                if script_assistant_instance:
-                    main_topics = script_assistant_instance.make_maintopic(user_input)
-                    ### ~~~로딩 중~~~
-                    show_subtopic_form = True
+                    # ScriptAssistant 인스턴스가 생성되어 있을 경우에만 make_maintopic 호출 - 주제 생성
+                    if script_assistant_instance:
+                        main_topics = script_assistant_instance.make_maintopic(
+                            user_input
+                        )
+                        ### ~~~로딩 중~~~
+                        show_subtopic_form = True
 
             # "대본 상세 구성하기"이 클릭된 경우
             elif "sub-button" in request.form:
+                # 선택한 maintopic
                 selected_maintopic = request.form.get("maintopic")
 
-                if script_assistant_instance:
-                    subtopics = script_assistant_instance.make_subtopics(
-                        user_input, selected_maintopic
-                    )
-                    ### ~~~로딩 중~~~
-                    print(subtopics)
+                if not selected_maintopic:
+                    flash("🚨 메인 주제들 중 하나를 선택해주세요❗", "error")
+                    show_subtopic_form = True
+                else:
+                    if script_assistant_instance:
+                        # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
+                        subtopics = script_assistant_instance.make_subtopics(
+                            user_input, selected_maintopic
+                        )
+                        ### ~~~로딩 중~~~
+                        print(subtopics)
 
-                    # session에 데이터 저장
-                    session["user_input"] = user_input
-                    session["selected_model"] = selected_model  ###
-                    session["selected_maintopic"] = selected_maintopic
-                    session["subtopics"] = subtopics
+                        # session에 데이터 저장
+                        session["user_input"] = user_input
+                        session["selected_maintopic"] = selected_maintopic
+                        session["subtopics"] = subtopics
 
-                    # subtopic.html 페이지로 리다이렉트
-                    return redirect(url_for("subtopic"))
-
+                        # subtopic.html 페이지로 리다이렉트
+                        return redirect(url_for("subtopic"))
     return render_template(
         "main.html",
         main_topics=main_topics,
@@ -75,8 +88,8 @@ def main():
 
 @app.route("/subtopic", methods=["GET", "POST"])
 def subtopic():
+    # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
-    selected_model = session.get("selected_model", "")  ###
     selected_maintopic = session.get("selected_maintopic", "")
     subtopics = session.get("subtopics", "")
 
@@ -88,7 +101,6 @@ def subtopic():
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
         if request.json["script_button"]:
-            # 선택된 소주제에 대한 스크립트 생성
             checkedNames = request.json["checkedNames"]
             print(checkedNames)
             # checkedNames : 선택된 체크박스의 name(subtopic{i})들을 리스트로 반환(script.js의 getCheckedCheckboxNames 참고)
@@ -97,11 +109,12 @@ def subtopic():
             if script_assistant_instance:
                 selected_idx = list(map(lambda name: int(name[8:]), checkedNames))
                 print(selected_idx)
-                # selected_idx : 선택한 subtopic의 인덱스 리스트, subtopic{i}의 숫자만 추출
+                # selected_idx : subtopic{i}의 숫자"i"만 추출
 
                 selected_list = script_assistant_instance.select_subtopics(selected_idx)
-                print(selected_list)  # 영어 (make_scripts에 들어갈 input이라, 할당할 필요없지만 확인차 출력)
+                print(selected_list)  # selected_idx에 해당하는 영어 subtopic
 
+                # 선택된 소주제에 대한 스크립트 생성
                 def event_stream():
                     """스크립트 생성을 위해 server-sent event stream을 생성합니다.
 
@@ -120,7 +133,7 @@ def subtopic():
                     try:
                         for i in range(len(checkedNames)):
                             for chunk in script_assistant_instance.make_scripts(
-                                user_input, str(i + 1)
+                                selected_maintopic, selected_list, str(i + 1)
                             ):
                                 print(chunk)
                                 if chunk:
@@ -134,7 +147,7 @@ def subtopic():
                         # 디버깅을 위해 exception 로깅
                         print(f"Error: {e}")
                         # client로 에러 메세지 전송
-                        yield "Error occurred: " + str(e)
+                        yield f"Error: {e}"
 
                 return Response(event_stream(), mimetype="text/event-stream")
 
@@ -142,7 +155,6 @@ def subtopic():
     return render_template(
         "subtopic.html",
         user_input=user_input,
-        selected_model=selected_model,  ###
         selected_maintopic=selected_maintopic,
         subtopics=subtopics,
     )

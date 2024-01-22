@@ -1,5 +1,5 @@
 /**
- * 'subtopic-checkbox' class 체크박스 중 선택된 것의 name을 획득하는 함수.
+ * 'subtopic-checkbox' 체크박스 중 선택된 것의 name을 획득하는 함수.
  * @returns {Array} 선택된 체크박스의 names을 담은 리스트.
  */
 function getCheckedCheckboxNames() {
@@ -100,7 +100,7 @@ const scriptform = document.getElementById("script-form");
 
 //#region 이벤트
 /**
- * 소주제 생성 버튼 클릭 이벤트 리스너.
+ * 스크립트 생성 버튼 클릭 이벤트 리스너.
  * chain이 stream으로 보내는 chunk를 누적하며 textarea 내에 업데이트합니다.
  */
 scriptform.addEventListener("submit", async (event) => {
@@ -111,8 +111,7 @@ scriptform.addEventListener("submit", async (event) => {
 
   let currentTextareaIndex = 0;
 
-  // user_input, checkedNames으로 Flask server에 요청 보냅니다.
-  // json형식으로 보냄
+  // script_button과 checkedNames을 json형식으로 Flask server에 요청 보냅니다.
   try {
     const response = await fetch("/subtopic", {
       method: "POST",
@@ -122,6 +121,7 @@ scriptform.addEventListener("submit", async (event) => {
       body: JSON.stringify({ script_button: true, checkedNames: checkedNames }),
     });
 
+    // 요청에 대한 응답이 실패한 경우
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
@@ -131,7 +131,7 @@ scriptform.addEventListener("submit", async (event) => {
     // response body 읽기 위해 ReadableStream를 만듭니다.
     const reader = response.body.getReader();
 
-    // response stream을 누적할 chunks 변수를 정의하고, 
+    // response stream을 디코딩할 chunk 변수와 누적할 chunks 변수를 정의하고, 
     // createTextarea 함수로 chunks를 담을 textarea를 만듭니다.
     let chunk = "";
     let chunks = "";
@@ -145,9 +145,9 @@ scriptform.addEventListener("submit", async (event) => {
 
       chunk = decoder.decode(value);
 
-      if (chunk.includes("Error occurred:")) {
+      if (chunk.includes("Error:")) {
         // 서버에서 에러 메시지가 전송된 경우, alert으로 표시
-        chunk = chunk.replace("Error occurred:", "");
+        chunk = chunk.replace("Error:", "");
         alert(chunk.trim());
         break;
       }

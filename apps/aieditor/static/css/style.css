@@ -187,3 +187,12 @@ option {
     background-color: white; /* 옵션 배경 색상 */
     color: #333; /* 옵션 글자 색상 */
 }
+
+.flash-message {
+    color: red;
+    display: block;
+}
+
+#topic-form .flash-message {
+    padding-left: 3%;
+}
