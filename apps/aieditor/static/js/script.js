@@ -47,7 +47,11 @@ function deleteScriptBox(button) {
   var container = button.parentNode;
   container.parentNode.removeChild(container);
 }
+const theButton = document.querySelector(".button");
 
+theButton.addEventListener("click", () => {
+    theButton.classList.add("button--loading");
+});
 
 /**
  * 선택한 subtopic을 strong 요소에 담고, 

@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>영상 생성기</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <!-- <script src="../static/js/script.js"></script> -->
     </head>
     <body>
         <header class="main-header">
@@ -20,8 +21,9 @@
                     <option value="GPT" {% if selected_model == 'GPT' %}selected{% endif %}>GPT</option>
                     <option value="Gemini" {% if selected_model == 'Gemini' %}selected{% endif %}>Gemini</option>
                 </select>
-                <button type="submit" name="main-button">주제 생성</button>
-                <!-- 영상 주제 / 모델이 없다면 flash가 나타납니다. -->
+                <button class="button" type="submit" name="main-button" onclick="this.classList.toggle('button--loading')">
+                    <span class="button__text">주제 생성</span>
+                </button>
                 {% with messages = get_flashed_messages() %}
                     {% if messages and 'main-button' in request.form %}
                         {% for message in messages %}
@@ -58,7 +60,7 @@
                             </div>
                         {% endif %}
                     {% endwith %}
-                    <button type="submit" name="sub-button" id="sub-button">대본 상세 구성하기</button>
+                    <button class="button" type="submit" name="sub-button" id="sub-button" onclick="this.classList.toggle('button--loading')"><span class="button__text">대본 상세 구성하기</span></button>
                 </div>
             </form>
         </div>
