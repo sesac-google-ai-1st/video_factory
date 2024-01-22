@@ -211,10 +211,10 @@ cursor:pointer;
   
   /*input 바로 다음의 label:before 에 체크하기 전 CSS 설정*/
 input[type=checkbox] + label:before{
-content: '';display: block;width: 15px;height: 15px;border-radius: 3px;position: absolute;top: 50%;margin-top: -9px;left: 0;border: 1px solid #0594fa;/*체크 전과 체크 후 높이 차이 때문에 설정*/
+content: '';display: block;width: 15px;height: 15px;border-radius: 3px;position: absolute;top: 50%;margin-top: -9px;left: 0;border: 1px solid #d3d3d3;/*체크 전과 체크 후 높이 차이 때문에 설정*/
 }
     
   /*checked된 input 바로 다음의 label:before 에 체크 후 CSS 설정*/  
 input[type=checkbox]:checked + label:before{
-border-color: #000;font-family: 'Font Awesome 5 Free';content: '\f00c';color: #0594fa;font-weight: bold;text-align: center;font-size: 13px;line-height: 15px; border: 1px solid #0594fa;
+border-color: #000;font-family: 'Font Awesome 5 Free';content: '\f00c';color: #0594fa;font-weight: bold;text-align: center;font-size: 15px;line-height: 15px; border: 1px solid #0594fa;
 }
