@@ -164,6 +164,7 @@ scriptform.addEventListener("submit", async (event) => {
           chunks = chunks.replace("The end", "");
           currentTextarea.value = chunks;
           currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+          theButton.classList.remove('button--loading');
           break;
         }
         currentTextarea.value = chunks;
@@ -178,6 +179,7 @@ scriptform.addEventListener("submit", async (event) => {
   } catch (error) {
     console.error("Fetch error:", error);
     // 여기에 적절한 오류 처리 로직 추가
+    theButton.classList.remove('button--loading');
   }
 });
 //#endregion

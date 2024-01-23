@@ -5,7 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>영상 생성기</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-        <!-- <script src="../static/js/script.js"></script> -->
     </head>
     <body>
         <header class="main-header">
@@ -21,7 +20,7 @@
                     <option value="GPT" {% if selected_model == 'GPT' %}selected{% endif %}>GPT</option>
                     <option value="Gemini" {% if selected_model == 'Gemini' %}selected{% endif %}>Gemini</option>
                 </select>
-                <button class="button" type="submit" name="main-button" onclick="this.classList.toggle('button--loading')">
+                <button class="button" type="submit" name="main-button" id="main-button" onclick="this.classList.add('button--loading')">
                     <span class="button__text">주제 생성</span>
                 </button>
                 {% with messages = get_flashed_messages() %}
@@ -65,4 +64,6 @@
             </form>
         </div>
     </body>
+    <script src="{{ url_for('static', filename='js/script.js') }}">
+    </script>
 </html>
