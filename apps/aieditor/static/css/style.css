@@ -36,24 +36,6 @@ body {
     box-sizing: border-box; /* 패딩과 테두리를 너비에 포함 */
 }
 
-.text-info {
-    font-family: 'Dongle';
-    font-size: xx-large;
-}
-
-.user-input-info {
-    text-decoration: underline;
-    text-underline-position: under;
-    font-size: large;
-}
-
-.model-info {
-  font-family: 'Dongle';
-  font-size: xx-large;
-  float: right;
-  /* margin-right: 5%; */ */
-}
-
 .left-section, .right-section {
     flex: 1;
     background-color: #ffffff;
@@ -62,6 +44,24 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     margin: 0 10px; /* 좌우에 마진 추가 */
     /* position: relative; 는 필요한 경우에만 추가 */
+}
+
+/* script.html 화면에서 정보 표시 */
+.text-info {
+  font-family: 'Dongle';
+  font-size: xx-large;
+}
+
+.user-input-info {
+  text-decoration: underline;
+  text-underline-position: under;
+  font-size: large;
+}
+
+.model-info {
+font-family: 'Dongle';
+font-size: xx-large;
+float: right;
 }
 
 /* 폼 스타일링 */
