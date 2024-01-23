@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>영상 생성기</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    </head>
+    <body>
+        <header class="main-header">
+            <h1>유튜브 영상 대본을 빠르게 작성해보세요!</h1>
+        </header>
+        <div class="container">
+            
+            <!-- 첫 번째 폼: 주제 생성 -->
+            <form method="post" id="topic-form">
+                <input type="text" id="user_input" name="user_input" value="{{ user_input }}" placeholder="영상 주제를 입력하세요. (ex. 북유럽신화)">
+                <select name="modelSelect" id="modelSelect" value="{{ selected_model }}">
+                    <option value="" disabled selected>모델 선택</option>
+                    <option value="GPT" {% if selected_model == 'GPT' %}selected{% endif %}>GPT</option>
+                    <option value="Gemini" {% if selected_model == 'Gemini' %}selected{% endif %}>Gemini</option>
+                </select>
+                <button class="button" type="submit" name="main-button" id="main-button" onclick="this.classList.add('button--loading')">
+                    <span class="button__text">주제 생성</span>
+                </button>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages and 'main-button' in request.form %}
+                        {% for message in messages %}
+                            <span class="flash-message">{{ message }}</span>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </form>
+            <!-- 두 번째 폼: 소주제 생성 -->
+            <form method="post" id="subtopic-form" style="{% if not show_subtopic_form %}display: none;{% endif %}">
+                <!-- 인풋창의 내용을 유지하기 위해 숨겨진 필드 추가 -->
+                <input type="hidden" name="user_input" value="{{ user_input }}">
+                <input type="hidden" name="modelSelect" value="{{ selected_model }}">
+                <div class="maintopics-container">
+                    {% for i in range(1,11) %}
+                        <!-- main_topics이 10이하인 경우, 생성된 것만 표시합니다. -->
+                        {% if main_topics[i-1] %}
+                            <label>
+                                <div class="maintopic-item">
+                                    <input type="radio" name="maintopic" value="{{ main_topics[i-1] }}">
+                                    <!-- 이곳에 생성된 maintopic들이 표시됩니다. -->
+                                    <span class="maintopic-title" id="maintopic{{i}}">{{ main_topics[i-1] }}</span>
+                                </div>
+                            </label>
+                        {% endif %}
+                    {% endfor %}
+                    <!-- 선택된 main topic이 없다면 flash가 나타납니다. -->
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages and 'sub-button' in request.form %}
+                            <div class="flash-message">
+                                {% for message in messages %}
+                                    <p>{{ message }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    <button class="button" type="submit" name="sub-button" id="sub-button" onclick="this.classList.toggle('button--loading')"><span class="button__text">대본 상세 구성하기</span></button>
+                </div>
+            </form>
+        </div>
+    </body>
+    <script src="{{ url_for('static', filename='js/script.js') }}">
+    </script>
+</html>
