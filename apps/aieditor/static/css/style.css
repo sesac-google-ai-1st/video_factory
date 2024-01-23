@@ -39,7 +39,7 @@ body {
 .left-section, .right-section {
     flex: 1;
     background-color: #ffffff;
-    padding: 20px;
+    padding: 0 20px 20px 20px;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     margin: 0 10px; /* 좌우에 마진 추가 */
@@ -163,7 +163,7 @@ input[type="text"] {
 
 /* 스크립트 박스 스타일 */
 .script-box {
-    width: 98%;
+    width: 96%;
     height: 100px; /* 고정 높이 */
     margin-top: 10px;
     border: 1px solid #ccc;
