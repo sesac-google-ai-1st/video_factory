@@ -1,5 +1,5 @@
 /**
- * 'subtopic-checkbox' class 체크박스 중 선택된 것의 name을 획득하는 함수.
+ * 'subtopic-checkbox' 체크박스 중 선택된 것의 name을 획득하는 함수.
  * @returns {Array} 선택된 체크박스의 names을 담은 리스트.
  */
 function getCheckedCheckboxNames() {
@@ -16,8 +16,47 @@ function getCheckedCheckboxNames() {
 }
 
 /**
+ * script-box-container를 위로 이동시키는 함수
+ * @param {HTMLElement} button - 클릭된 버튼 요소
+ */
+function moveUp(button) {
+  var container = button.parentNode;
+  var previous = container.previousElementSibling;
+  if (previous && previous.classList.contains("script-box-container")) {
+    container.parentNode.insertBefore(container, previous);
+  }
+}
+
+/**
+ * script-box-container를 아래로 이동시키는 함수
+ * @param {HTMLElement} button - 클릭된 버튼 요소
+ */
+function moveDown(button) {
+  var container = button.parentNode;
+  var next = container.nextElementSibling;
+  if (next && next.classList.contains("script-box-container")) {
+    container.parentNode.insertBefore(next, container);
+  }
+}
+
+/**
+ * script-box-container를 삭제하는 함수
+ * @param {HTMLElement} button - 클릭된 버튼 요소
+ */
+function deleteScriptBox(button) {
+  var container = button.parentNode;
+  container.parentNode.removeChild(container);
+}
+const theButton = document.querySelector(".button");
+
+theButton.addEventListener("click", () => {
+    theButton.classList.add("button--loading");
+});
+
+/**
  * 선택한 subtopic을 strong 요소에 담고, 
  * 그 subtopic에 해당하는 script를 담을 textarea를 만들어서 반환하는 함수.
+ * script-box-container의 위 아래 순서를 바꾸거나, 삭제하는 버튼을 추가하였습니다.
  * @param {Array} checkedNames - 선택된 체크박스의 names을 담은 리스트.
  * @param {number} index - script의 순서를 가리키는 인덱스. subtopic이 n개 선택된 경우, 그 중 몇번째인지 구분하는 역할.
  * @returns {HTMLTextAreaElement} 만들어진 textarea 요소.
@@ -25,83 +64,123 @@ function getCheckedCheckboxNames() {
 function createTextarea(checkedNames, index) {
   const scriptBoxes = document.querySelector('.script-boxes'); // 선택한 subtopic과 textarea가 표시될 부모 요소.
 
+  const divElement = document.createElement('div');
+  divElement.classList.add('script-box-container');
+  scriptBoxes.appendChild(divElement);
+
   const strongElement = document.createElement('strong');
   strongElement.classList.add('selected-subtopic');
   strongElement.innerHTML = document.getElementById(checkedNames[index]).innerText.substring(2).replace(/^\.+/g, '').trim(); // index번째 체크박스 name을 id로 가지는 요소의 innerText : subtopic 자체
-  scriptBoxes.appendChild(strongElement);
+  divElement.appendChild(strongElement);
+
+  const deleteButton = document.createElement("button");
+  deleteButton.classList.add('float-right');
+  deleteButton.innerHTML = "❌";
+  deleteButton.onclick = function() { deleteScriptBox(this); };
+  divElement.appendChild(deleteButton);
+
+  const moveDownButton  = document.createElement("button");
+  moveDownButton.classList.add('float-right');
+  moveDownButton.innerHTML = "🠗";
+  moveDownButton.onclick = function() { moveDown(this); };
+  divElement.appendChild(moveDownButton);
+
+  const moveUpButton = document.createElement("button");
+  moveUpButton.classList.add('float-right');
+  moveUpButton.innerHTML = "🠕";
+  moveUpButton.onclick = function() { moveUp(this); };
+  divElement.appendChild(moveUpButton);
 
   const textarea = document.createElement('textarea');
   textarea.classList.add('script-box');
   textarea.setAttribute("readonly", "true");  // 수정할 수 없게 설정
-  textarea.setAttribute('placeholder', `${index + 1}번째 스크립트를 생성 중입니다. 조금만 기다려주세요.`);
-  scriptBoxes.appendChild(textarea);
+  textarea.setAttribute('placeholder', `${index + 1}번째 스크립트를 생성 중입니다. 생성이 끝난 후 스크립트를 수정할 수 있습니다. 조금만 기다려주세요.`);
+  divElement.appendChild(textarea);
   return textarea;
 }
 
 
-const topicform = document.getElementById("topic-form");
 const scriptform = document.getElementById("script-form");
 
 //#region 이벤트
 /**
- * 소주제 생성 버튼 클릭 이벤트 리스너.
+ * 스크립트 생성 버튼 클릭 이벤트 리스너.
  * chain이 stream으로 보내는 chunk를 누적하며 textarea 내에 업데이트합니다.
  */
 scriptform.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  // topicform에서 user_input을, 
-  // getCheckedCheckboxNames로 선택된 체크박스의 names를 가져옵니다.
-  const user_input = topicform.elements.user_input.value;
+  // getCheckedCheckboxNames 함수로 선택된 체크박스의 names를 가져옵니다.
   const checkedNames = getCheckedCheckboxNames();
 
   let currentTextareaIndex = 0;
 
-  // user_input, checkedNames으로 Flask server에 요청 보냅니다.
-  // json형식으로 보냄
-  const response = await fetch("/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ user_input: user_input, button2: true, checkedNames: checkedNames }),
-  });
+  // script_button과 checkedNames을 json형식으로 Flask server에 요청 보냅니다.
+  try {
+    const response = await fetch("/subtopic", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ script_button: true, checkedNames: checkedNames }),
+    });
 
-  // 스트리밍된 response 텍스트를 디코딩하기 위해 TextDecoder를 만듭니다.
-  const decoder = new TextDecoder();
-  // response body 읽기 위해 ReadableStream를 만듭니다.
-  const reader = response.body.getReader();
+    // 요청에 대한 응답이 실패한 경우
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 
-  // response stream을 누적할 chunks 변수를 정의하고, 
-  // createTextarea 함수로 chunks를 담을 textarea를 만듭니다.
-  let chunks = "";
-  let currentTextarea = createTextarea(checkedNames, currentTextareaIndex);
+    // 스트리밍된 response 텍스트를 디코딩하기 위해 TextDecoder를 만듭니다.
+    const decoder = new TextDecoder();
+    // response body 읽기 위해 ReadableStream를 만듭니다.
+    const reader = response.body.getReader();
 
-  
-  // response stream을 읽고 chunks에 누적하여 textarea에 추가합니다.
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+    // response stream을 디코딩할 chunk 변수와 누적할 chunks 변수를 정의하고, 
+    // createTextarea 함수로 chunks를 담을 textarea를 만듭니다.
+    let chunk = "";
+    let chunks = "";
+    let currentTextarea = createTextarea(checkedNames, currentTextareaIndex);
 
-    chunks += decoder.decode(value);
+    
+    // response stream을 읽고 chunks에 누적하여 textarea에 추가합니다.
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    if (chunks.includes("End of script")) {   // 해당 주제에 관한 스크립트 생성이 끝난 경우,
-      chunks = chunks.replace("End of script", "");
-      if (chunks.includes("The end")) {   // 모든 스크립트 생성이 끝난 경우, break
-        chunks = chunks.replace("The end", "");
-        currentTextarea.value = chunks;
-        currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+      chunk = decoder.decode(value);
+
+      if (chunk.includes("Error:")) {
+        // 서버에서 에러 메시지가 전송된 경우, alert으로 표시
+        chunk = chunk.replace("Error:", "");
+        alert(chunk.trim());
         break;
       }
-      currentTextarea.value = chunks;
-      currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
-      currentTextareaIndex++;
-      currentTextarea = createTextarea(checkedNames, currentTextareaIndex);   // 다음 주제에 관한 스크립트를 넣을 textarea 생성
-      chunks = "";  // Reset chunks for the new textarea
-    } else {
-      currentTextarea.value = chunks;
-    }
-  };
+
+      chunks += chunk;
+
+      if (chunks.includes("End of script")) {   // 해당 주제에 관한 스크립트 생성이 끝난 경우,
+        chunks = chunks.replace("End of script", "");
+        if (chunks.includes("The end")) {   // 모든 스크립트 생성이 끝난 경우, break
+          chunks = chunks.replace("The end", "");
+          currentTextarea.value = chunks;
+          currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+          theButton.classList.remove('button--loading');
+          break;
+        }
+        currentTextarea.value = chunks;
+        currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+        currentTextareaIndex++;
+        currentTextarea = createTextarea(checkedNames, currentTextareaIndex);   // 다음 주제에 관한 스크립트를 넣을 textarea 생성
+        chunks = "";  // Reset chunks for the new textarea
+      } else {
+        currentTextarea.value = chunks;
+      }
+    };
+  } catch (error) {
+    console.error("Fetch error:", error);
+    // 여기에 적절한 오류 처리 로직 추가
+    theButton.classList.remove('button--loading');
+  }
 });
 //#endregion
 

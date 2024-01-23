@@ -132,8 +132,8 @@ def subtitles(video_file, subtitle_file, output_path):
 
     Args:
         video_file (str): video file의 절대 경로를 입력합니다.
-        subtitle_file (_type_): subtitle 파일의 경로를 입력합니다. (여기서는 sample.srt)
-        output_path (_type_): 자막이 생성된 비디오가 저장될 경로를 지정합니다.
+        subtitle_file (str): subtitle 파일의 경로를 입력합니다. (여기서는 sample.srt)
+        output_path (str): 자막이 생성된 비디오가 저장될 경로를 지정합니다.
     """
 
     # 자막 서식을 작성합니다.
@@ -155,6 +155,30 @@ def subtitles(video_file, subtitle_file, output_path):
 
     # 최종적으로 합쳐진 비디오를 subtitle_video라는 이름으로 출력합니다.
     final_clip.write_videofile(output_path + "subtitle_video.mp4")
+
+
+def backgroundmusic(video_path, bgm_path):
+    """_summary_
+    배경음악 추가하는 함수 생성하기
+    Args:
+        video_path (str): video 파일의 절대경로를 포함하여 파일 지정
+        bgm_path (str): audio 파일의 절대경로를 포함하여 파일 지정
+    """
+
+    # input으로 입력받은 경로를 통해 각각 video, audio 파일로 불러옵니다.
+    videoclip = VideoFileClip(video_path)
+    audio = AudioFileClip(bgm_path)
+    # 배경 음악이 될 audio의 볼륨을 조절합니다.
+    audio = audio.volumex(0.3)
+
+    # 약 30초의 배경 음악을 영상이 끝날 때까지 재생할 수 있도록 loop를 만듭니다.
+    loopclip = afx.audio_loop(audio, duration=videoclip.duration)
+
+    # video의 음향과 배경 음악을 합쳐줍니다.
+    newclip = CompositeAudioClip([videoclip.audio, loopclip])
+    videoclip.audio = newclip
+
+    videoclip.write_videofile("final_video.mp4")
 
 
 # add_static_image_to_video(img, audio, test)
