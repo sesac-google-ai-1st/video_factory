@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>영상 생성기</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    </head>
+    <body>
+        <header class="main-header">
+            <h1>유튜브 영상 대본을 빠르게 작성해보세요!</h1>
+        </header>
+        
+        {% for i in script_list %}
+            <p>{{i}}</p>
+        {% endfor %}
+
+        
+        <script src="{{ url_for('static', filename='js/script.js') }}">
+        </script>
+    </body>
+</html>

@@ -1,7 +1,9 @@
+import os
 from flask import Flask, render_template
 from flask import request, Response, url_for, redirect, session, flash
 from apps.aieditor.func.chain import ScriptAssistant
-import os
+from apps.aieditor.func.split_script import ScriptSplitter
+
 
 app = Flask(__name__)
 
@@ -55,7 +57,6 @@ def main():
                         main_topics = script_assistant_instance.make_maintopic(
                             user_input
                         )
-                        ### ~~~로딩 중~~~
                         show_subtopic_form = True
 
             # "대본 상세 구성하기"이 클릭된 경우
@@ -73,7 +74,6 @@ def main():
                         subtopics = script_assistant_instance.make_subtopics(
                             user_input, selected_maintopic
                         )
-                        ### ~~~로딩 중~~~
                         print(subtopics)
 
                         # session에 데이터 저장
@@ -82,8 +82,9 @@ def main():
                         session["selected_maintopic"] = selected_maintopic
                         session["subtopics"] = subtopics
 
-                        # subtopic.html 페이지로 리다이렉트
-                        return redirect(url_for("subtopic"))
+                        # script.html 페이지로 리다이렉트
+                        return redirect(url_for("script"))
+
     return render_template(
         "main.html",
         main_topics=main_topics,
@@ -93,8 +94,8 @@ def main():
     )
 
 
-@app.route("/subtopic", methods=["GET", "POST"])
-def subtopic():
+@app.route("/script", methods=["GET", "POST"], endpoint="script")
+def script():
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
     selected_model = session.get("selected_model", "")
@@ -109,10 +110,11 @@ def subtopic():
     if request.method == "POST":
         print("request:", request)
         print("request.form:", request.form)
-        print("request.json:", request.json)
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
-        if request.json["script_button"]:
+        if not (request.form) and request.json.get("script_button"):
+            print("request.json:", request.json)
+
             # checkedNames : 선택된 체크박스의 name(subtopic{i})들을 리스트로 반환(script.js의 getCheckedCheckboxNames 참고)
             checkedNames = request.json["checkedNames"]
             print(checkedNames)
@@ -164,9 +166,17 @@ def subtopic():
 
                 return Response(event_stream(), mimetype="text/event-stream")
 
+        # "영상 만들기" 버튼이 눌린 경우
+        elif not (request.form) and request.json.get("video_button"):
+            script_data = request.json.get("scriptData")
+            session["script_data"] = script_data
+
+            # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
+            # return redirect(url_for("video"))
+
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
-        "subtopic.html",
+        "script.html",
         gemini_logo=gemini_logo,
         gpt_logo=gpt_logo,
         user_input=user_input,
@@ -174,6 +184,18 @@ def subtopic():
         selected_maintopic=selected_maintopic,
         subtopics=subtopics,
     )
+
+
+@app.route("/video", methods=["GET", "POST"], endpoint="video")
+def video():
+    print("Reached the /video endpoint.")
+    script_data = session.get("script_data", "")
+    # ScriptSplitter 인스턴스 생성 또는 업데이트
+    script_splitter_instance = ScriptSplitter()
+    script_list = script_splitter_instance.split_script2sentences(script_data)
+    print(script_list)
+
+    return render_template("video.html", script_list=script_list)
 
 
 if __name__ == "__main__":
