@@ -1,25 +1,27 @@
 /* 기본 스타일 설정 */
 body {
     font-family: 'Arial', sans-serif;
-    margin: 0;
+    margin: 100px 0;
     padding: 0;
     /* background-image: url('/static/images/background.png'); */
     background-size: cover; /* 이미지가 전체 화면을 덮도록 설정 */
     background-position: center; /* 이미지가 중앙에 오도록 설정 */
     background-repeat: no-repeat; /* 이미지가 반복되지 않도록 설정 */
-    background-color: #dbdbdb;
+    background-color: #ffffff;
     color: #333;
-    line-height: 1.6;
+    line-height: 1.2;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: auto; /* 상하 자동 마진을 사용하여 중앙 정렬 */
     overflow: auto;
-    padding: 20px; /* 이 패딩은 컨테이너 내부 측면에 적용됩니다. */
-    /* display: flex; 는 이 경우에는 필요하지 않습니다. */
-    /* justify-content: center; 는 이 경우에는 필요하지 않습니다. */
-    /* align-items: center; 는 이 경우에는 필요하지 않습니다. */
+    padding-left: 15%;
+}
+
+.maintopics-container{
+  width: 80%;
+  padding-left: 15px
 }
 
 .full-width-section {
@@ -48,50 +50,98 @@ body {
 }
 
 input[type="text"] {
-    width: 94% ;
+    width: 50% ;
     padding: 20px;
     margin-bottom: 10px;
-    /* margin: 15px;  */
-
+    margin: 15px; 
+    align-items: center;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
 
-button {
-    background-color: #3a84bd;
+.button {
+    position: relative;
+    padding: 8px 16px;
+    background: #3baaff;
     color: white;
-    padding: 10px 20px;
     border: none;
-    border-radius: 4px;
+    outline: none;
+    border-radius: 2px;
     cursor: pointer;
-    font-size: 16px;
-}
+  }
+  
+  .button:active {
+    background: #3baaff;
+  }
+  
+  .button__text {
+    font: bold 20px "Quicksand", san-serif;
+    color: #ffffff;
+    transition: all 0.2s;
+  }
+  
+  .button--loading {
+    pointer-events: none;
+  }
 
+  .button--loading .button__text {
+    visibility: hidden;
+    opacity: 0;
+  }
+  
+  .button--loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    border: 4px solid transparent;
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: button-loading-spinner 1s ease infinite;
+  }
+  
+  @keyframes button-loading-spinner {
+    from {
+      transform: rotate(0turn);
+    }
+  
+    to {
+      transform: rotate(1turn);
+    }
+  }
+/* 
 button:hover {
     background-color: #334063;
-}
+} */
 
 /* 체크박스와 소주제 제목 스타일 */
-.subtopic-item {
+.subtopic-item, .maintopic-item {
     display: flex;
     align-items: center;
     margin: 10px 0;
-    border: 1px solid #ddd;
+    border: 1px solid #fff;
     padding: 10px;
     border-radius: 4px;
-    background-color: #f8f8f8;
+    background-color: #f5f9ff;
 }
 
-.subtopic-title {
+.subtopic-title, .maintopic-title {
+    margin-left: 10px;
     margin-right: 10px;
     flex-grow: 1;
     font-weight: bold;
     color: #363636;
+    width: inherit;
 }
 
 /* 스크립트 박스 스타일 */
 .script-box {
-    width: 100%;
+    width: 98%;
     height: 100px; /* 고정 높이 */
     margin-top: 10px;
     border: 1px solid #ccc;
@@ -113,7 +163,7 @@ button:hover {
     }
 }
 
-#script-create-btn {
+#sub-button, #script-button {
     width: 100%; /* 버튼을 전체 너비로 확장 */
     padding: 12px 0; /* 상하 패딩 증가 */
     font-size: 18px; /* 글꼴 크기 증가 */
@@ -123,13 +173,14 @@ button:hover {
 .main-header {
     text-align: center;
     padding: 20px 0;
-    background-color: #3276cf;
+    background-color: #ffffff;
     color: rgb(255, 255, 255);
 }
 
 .main-header h1 {
+    color: #000000;
     margin: 0;
-    font-size: 28px;
+    font-size: 20px;
 }
 
 
@@ -157,9 +208,61 @@ select:focus {
     color: rgb(7, 7, 7);
 }
 
+.script-box-container {
+    margin-bottom: 10px;
+}
+
+.float-right {
+    float: right;
+}
+
+.script-box-container button {
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    background-color: #3baaff;
+    color: white;
+    margin-left: 5px;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1;
+    border: none;
+}
+
 /* 옵션 스타일링 */
 option {
     padding: 10px; /* 옵션 내 패딩 */
     background-color: white; /* 옵션 배경 색상 */
     color: #333; /* 옵션 글자 색상 */
+}
+
+.flash-message {
+    color: red;
+    display: block;
+}
+
+#topic-form .flash-message {
+    padding-left: 3%;
+}
+
+/* 체크박스 스타일링 */
+/*input 은 숨겨주기*/
+input[type=checkbox]{
+display:none;
+}
+  /*input 바로 다음의 label*/
+input[type=checkbox] + label{
+padding-left: 25px;
+position: relative;
+cursor:pointer;
+}
+  
+  /*input 바로 다음의 label:before 에 체크하기 전 CSS 설정*/
+input[type=checkbox] + label:before{
+content: '';display: block;width: 15px;height: 15px;border-radius: 3px;position: absolute;top: 50%;margin-top: -9px;left: 0;border: 1px solid #d3d3d3;/*체크 전과 체크 후 높이 차이 때문에 설정*/
+}
+    
+  /*checked된 input 바로 다음의 label:before 에 체크 후 CSS 설정*/  
+input[type=checkbox]:checked + label:before{
+border-color: #000;font-family: 'Font Awesome 5 Free';content: '\f00c';color: #0594fa;font-weight: bold;text-align: center;font-size: 15px;line-height: 15px; border: 1px solid #0594fa;
 }
