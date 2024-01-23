@@ -15,8 +15,17 @@
             <!-- 왼쪽 섹션 -->
             <div class="left-section">
                 <!-- main.html에서 사용자가 입력하고 선택한 정보들 표시 -->
-                <h3>입력한 영상 키워드: {{ user_input }}</h3>
-                <h3>선택한 메인 주제: {{ selected_maintopic }}</h3>
+                <h3 class="text-info">Video Keyword
+                    <span class="model-info">
+                        {% if selected_model == 'Gemini' %}
+                            <img src="{{ gemini_logo }}" alt="GEMINI" width="60" height="45">
+                        {% elif selected_model == 'GPT' %}
+                            <img src="{{ gpt_logo }}" alt="GPT" width="30" height="30">
+                        {% endif %}
+                    </span>
+                    <div class="user-input-info">
+                        {{ user_input }} </div></h3>
+                <h3 class="text-info">Main Topic <div class="user-input-info">{{ selected_maintopic }}</div></h3>
                 <!-- 스크립트 생성 폼 -->
                 <form method="post" id="script-form">
                     <!-- 인풋창의 내용을 유지하기 위해 숨겨진 필드 추가 -->

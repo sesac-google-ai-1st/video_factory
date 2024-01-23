@@ -1,6 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Dongle:wght@700&family=Gowun+Dodum&display=swap');
+
+*{
+  font-family: 'Gowun Dodum';
+}
 /* 기본 스타일 설정 */
 body {
-    font-family: 'Arial', sans-serif;
     margin: 100px 0;
     padding: 0;
     /* background-image: url('/static/images/background.png'); */
@@ -42,6 +46,24 @@ body {
     /* position: relative; 는 필요한 경우에만 추가 */
 }
 
+/* script.html 화면에서 정보 표시 */
+.text-info {
+  font-family: 'Dongle';
+  font-size: xx-large;
+}
+
+.user-input-info {
+  text-decoration: underline;
+  text-underline-position: under;
+  font-size: large;
+}
+
+.model-info {
+font-family: 'Dongle';
+font-size: xx-large;
+float: right;
+}
+
 /* 폼 스타일링 */
 .form-group {
     margin-bottom: 15px;
@@ -75,7 +97,7 @@ input[type="text"] {
   }
   
   .button__text {
-    font: bold 20px "Quicksand", san-serif;
+    font: bold 16px "Gowun Dodum", san-serif;
     color: #ffffff;
     transition: all 0.2s;
   }
@@ -114,10 +136,10 @@ input[type="text"] {
       transform: rotate(1turn);
     }
   }
-/* 
-button:hover {
+
+ .button:hover {
     background-color: #334063;
-} */
+}
 
 /* 체크박스와 소주제 제목 스타일 */
 .subtopic-item, .maintopic-item {
@@ -193,7 +215,6 @@ select {
     border-radius: 4px;
     background-color: white; /* 배경 색상 */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
-    font-family: 'Arial', sans-serif; /* 글꼴 */
     color: #333; /* 글자 색상 */
     cursor: pointer; /* 커서 스타일 */
 }
