@@ -33,7 +33,9 @@
                             </label>
                         {% endfor %}
                     </div>
-                    <button class="button" type="submit" name="script-button" id="script-button" onclick="this.classList.toggle('button--loading')"><span class="button__text">스크립트 생성</span></button>
+                    <button class="button" type="submit" name="script-button" id="script-button" onclick="this.classList.toggle('button--loading')">
+                        <span class="button__text">스크립트 생성</span>
+                    </button>
                 </form>
             </div>
             <!-- 오른쪽 섹션 -->
@@ -42,9 +44,16 @@
                 <div class="script-boxes">
                     <!-- 이곳에 선택한 subtopic과 textarea가 표시됩니다. -->
                 </div>
+                <form method="post" id="video-form">
+                    <!-- <button class="button" type="submit" name="video-button" id="video-button" onclick="this.classList.toggle('button--loading')"> -->
+                    <button class="button" type="submit" name="video-button" id="video-button">
+                        <span class="button__text">영상 만들기</span>
+                    </button>
+                </form>
+                
             </div>
         </div>
+        <script src="{{ url_for('static', filename='js/script.js') }}">
+        </script>
     </body>
-    <script src="{{ url_for('static', filename='js/script.js') }}">
-    </script>
 </html>
