@@ -47,11 +47,6 @@ function deleteScriptBox(button) {
   var container = button.parentNode;
   container.parentNode.removeChild(container);
 }
-const theButton = document.querySelector(".button");
-
-theButton.addEventListener("click", () => {
-    theButton.classList.add("button--loading");
-});
 
 /**
  * 선택한 subtopic을 strong 요소에 담고, 
@@ -99,14 +94,68 @@ function createTextarea(checkedNames, index) {
   return textarea;
 }
 
+/**
+ * 버튼 클릭 시 로딩 중을 표시하는 기능
+ * @type {HTMLElement} theButton - 클릭 이벤트가 연결된 버튼 요소
+ * @event click - 버튼 클릭 시 발생하는 이벤트
+ */
+const theButton = document.querySelector(".button");
 
-const scriptform = document.getElementById("script-form");
+theButton.addEventListener("click", () => {
+    theButton.classList.add("button--loading");
+});
+
+
+
+/**
+ * 비디오 폼에서 "영상 만들기" 버튼 클릭 시 이벤트 핸들러.
+ * 모든 textarea의 innerValue를 읽어서 배열에 저장한 후, Flask 서버에 요청을 보냄.
+ * @param {Event} event - 폼 제출 이벤트
+ */
+const videoForm = document.getElementById("video-form");
+
+videoForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  // 모든 textarea의 innerValue를 읽어서 배열에 저장
+  const scriptBoxes = document.querySelectorAll('.script-box');
+  const scriptData = Array.from(scriptBoxes).map(textarea => textarea.value);
+
+  // video_button과 scriptData를 JSON 형식으로 Flask server에 요청을 보냄
+  try {
+    const response = await fetch("/script", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ video_button: true, scriptData: scriptData }),
+    });
+
+    // 요청에 대한 응답이 실패한 경우
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    console.log("최종 스크립트 session에 저장 완료");
+
+    // 이후 필요한 동작 수행
+    // 예를 들면, 페이지를 리다이렉트하거나 다른 작업을 수행
+    window.location.href = "/video";
+  } catch (error) {
+    console.error("Fetch error:", error);
+    // 여기에 적절한 오류 처리 로직 추가
+  }
+});
+
+
 
 //#region 이벤트
 /**
  * 스크립트 생성 버튼 클릭 이벤트 리스너.
  * chain이 stream으로 보내는 chunk를 누적하며 textarea 내에 업데이트합니다.
  */
+const scriptform = document.getElementById("script-form");
+
 scriptform.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -117,7 +166,7 @@ scriptform.addEventListener("submit", async (event) => {
 
   // script_button과 checkedNames을 json형식으로 Flask server에 요청 보냅니다.
   try {
-    const response = await fetch("/subtopic", {
+    const response = await fetch("/script", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -152,6 +201,8 @@ scriptform.addEventListener("submit", async (event) => {
       if (chunk.includes("Error:")) {
         // 서버에서 에러 메시지가 전송된 경우, alert으로 표시
         chunk = chunk.replace("Error:", "");
+        currentTextarea.removeAttribute("readonly"); // Remove readonly attribute to allow editing
+        theButton.classList.remove('button--loading');
         alert(chunk.trim());
         break;
       }

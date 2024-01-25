@@ -59,11 +59,13 @@
                             </div>
                         {% endif %}
                     {% endwith %}
-                    <button class="button" type="submit" name="sub-button" id="sub-button" onclick="this.classList.toggle('button--loading')"><span class="button__text">대본 상세 구성하기</span></button>
+                    <button class="button" type="submit" name="sub-button" id="sub-button" onclick="this.classList.toggle('button--loading')">
+                        <span class="button__text">대본 상세 구성하기</span>
+                    </button>
                 </div>
             </form>
         </div>
+        <script src="{{ url_for('static', filename='js/script.js') }}">
+        </script>
     </body>
-    <script src="{{ url_for('static', filename='js/script.js') }}">
-    </script>
 </html>
