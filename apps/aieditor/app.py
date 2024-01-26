@@ -1,12 +1,17 @@
+import os
 from flask import Flask, render_template
 from flask import request, Response, url_for, redirect, session, flash
 from apps.aieditor.func.chain import ScriptAssistant
 from apps.aieditor.func.split_script import ScriptSplitter
 
+
 app = Flask(__name__)
 
 # session 사용을 위해 secret key를 설정
 app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
+
+imgPath = os.path.join("static", "image")
+app.config["IMAGE_FOLDER"] = imgPath
 
 main_topics = []
 subtopics = []
@@ -73,6 +78,7 @@ def main():
 
                         # session에 데이터 저장
                         session["user_input"] = user_input
+                        session["selected_model"] = selected_model
                         session["selected_maintopic"] = selected_maintopic
                         session["subtopics"] = subtopics
 
@@ -89,11 +95,16 @@ def main():
 
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
-def subtopic():
+def script():
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
+    selected_model = session.get("selected_model", "")
     selected_maintopic = session.get("selected_maintopic", "")
     subtopics = session.get("subtopics", "")
+
+    # model image 불러오기
+    gemini_logo = os.path.join(app.config["IMAGE_FOLDER"], "Gemini.png")
+    gpt_logo = os.path.join(app.config["IMAGE_FOLDER"], "GPT.png")
 
     # POST 요청 처리
     if request.method == "POST":
@@ -166,7 +177,10 @@ def subtopic():
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
         "script.html",
+        gemini_logo=gemini_logo,
+        gpt_logo=gpt_logo,
         user_input=user_input,
+        selected_model=selected_model,
         selected_maintopic=selected_maintopic,
         subtopics=subtopics,
     )
