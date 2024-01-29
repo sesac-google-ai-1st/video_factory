@@ -64,8 +64,8 @@
                     <div class="modal" id="bgm-model">
                         <div class="modal_body">
                             <h2>생성된 배경음원 확인하기</h2>
-                            <audio controls>
-                                <source src="{{ url_for('static', filename='audio/musicgen_{}.wav'.format(user_input)) }}" type="audio/wav" style="margin-bottom: 20px;">
+                            <audio controls id="music_player">
+                                <source type="audio/wav" style="margin-bottom: 20px;">
                                 브라우저가 오디오를 지원하지 않습니다. 
                             </audio><br>
                             <div class="radio" style="margin-top: 20px;">

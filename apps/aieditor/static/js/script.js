@@ -129,6 +129,7 @@ function checkFile() {
               })
                 .then(() => {
                   bgmButton.classList.remove('button--loading');
+                  document.getElementById('music_player').src = filePath;
                   openModal();
                 });
               
@@ -173,13 +174,13 @@ window.onclick = function(event) {
 
 
 /**
- * 비디오 폼에서 "영상 만들기" 버튼 클릭 시 이벤트 핸들러.
+ * "영상 만들기" 버튼 클릭 시 이벤트 핸들러.
  * 모든 textarea의 innerValue를 읽어서 배열에 저장한 후, Flask 서버에 요청을 보냄.
  * @param {Event} event - 폼 제출 이벤트
  */
-const videoForm = document.getElementById("video-form");
+const videoButton = document.getElementById("video-button");
 
-videoForm.addEventListener("submit", async (event) => {
+videoButton.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   // 모든 textarea의 innerValue를 읽어서 배열에 저장
