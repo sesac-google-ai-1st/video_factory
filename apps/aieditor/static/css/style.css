@@ -164,7 +164,7 @@ input[type="text"] {
 /* 스크립트 박스 스타일 */
 .script-box {
     width: 96%;
-    height: 100px; /* 고정 높이 */
+    height: 150px; /* 고정 높이 */
     margin-top: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -315,7 +315,7 @@ border-color: #000;font-family: 'Font Awesome 5 Free';content: '\f00c';color: #0
 
 
   width:400px;
-  height:300px;
+  height:250px;
 
   padding:40px;  
 

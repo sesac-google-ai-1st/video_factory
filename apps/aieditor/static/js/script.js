@@ -154,11 +154,20 @@ bgmButton.addEventListener("click", (event) => {
 
 function openModal() {
   const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  const audio = document.querySelector('audio');
+  if (audio) {
+    audio.volume = 0.5;   // 기본 볼륨 0.5로 설정
+  }
   modal.style.display = 'flex';
 }
 
 function closeModal(event) {
   event.preventDefault();
+  const audio = document.querySelector('audio');
+  if (audio) {
+    audio.pause();   // 오디오 멈추기
+    audio.currentTime = 0;    // 오디오 시작지점으로 바꾸기
+  }
   const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
   modal.style.display = 'none';
 }
@@ -180,7 +189,7 @@ window.onclick = function(event) {
  */
 const videoButton = document.getElementById("video-button");
 
-videoButton.addEventListener("submit", async (event) => {
+videoButton.addEventListener("click", async (event) => {
   event.preventDefault();
 
   // 모든 textarea의 innerValue를 읽어서 배열에 저장
