@@ -105,6 +105,71 @@ theButton.addEventListener("click", () => {
     theButton.classList.add("button--loading");
 });
 
+/**
+ * bgm 확인용 창 띄우기
+ * @param {HTMLElement} button - 클릭된 버튼 요소
+ */
+const bgmButton = document.getElementById('bgm-button');
+
+function checkFile() {
+  
+  var user_input = document.getElementById('user_input').innerText;
+  var filePath = `static/audio/musicgen_${user_input}.wav`;
+  // 파일 존재 여부 확인
+  fetch(filePath, { method: 'GET' })
+      .then(response => {
+          if (response.ok) {
+              // 파일이 존재하면 원하는 작업 실행
+              fetch("/script", {
+                method: "POST",
+                headers: {
+                  'Content-Type': "application/json"
+                },
+                body: JSON.stringify({})
+              })
+                .then(() => {
+                  bgmButton.classList.remove('button--loading');
+                  openModal();
+                });
+              
+          } else {
+              // 파일이 아직 생성되지 않았으면 재귀적으로 계속 확인
+              setTimeout(checkFile, 15000);  // 15초마다 확인
+          }
+      })
+      .catch(error => {
+          // 에러 발생 시 처리
+          console.error('Error checking file:', error);
+      });
+}
+
+bgmButton.addEventListener("click", (event) => {
+  event.preventDefault();  // 기본 동작 중지
+  console.log("BGM 버튼 클릭");
+
+  checkFile();
+ // 인자를 넘기지 않도록 수정
+});
+
+function openModal() {
+  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  modal.style.display = 'flex';
+}
+
+function closeModal(event) {
+  event.preventDefault();
+  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  modal.style.display = 'none';
+}
+
+// 모달 외부 클릭 시 닫기
+window.onclick = function(event) {
+  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  if (event.target === modal) {
+    closeModal(event);
+  }
+};
+
 
 
 /**
