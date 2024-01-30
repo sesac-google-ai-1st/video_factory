@@ -105,6 +105,7 @@ theButton.addEventListener("click", () => {
     theButton.classList.add("button--loading");
 });
 
+
 /**
  * bgm 확인용 창 띄우기
  * @param {HTMLElement} button - 클릭된 버튼 요소

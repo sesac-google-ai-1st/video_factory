@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template
 from flask import request, Response, url_for, redirect, session, flash
 from apps.aieditor.func.chain import ScriptAssistant
@@ -5,6 +6,7 @@ from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
 import os
+
 
 app = Flask(__name__)
 
@@ -105,7 +107,7 @@ def main():
 
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
-def subtopic():
+def script():
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
     selected_model = session.get("selected_model", "")
