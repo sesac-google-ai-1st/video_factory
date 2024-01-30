@@ -3,6 +3,9 @@ from flask import Flask, render_template
 from flask import request, Response, url_for, redirect, session, flash
 from apps.aieditor.func.chain import ScriptAssistant
 from apps.aieditor.func.split_script import ScriptSplitter
+import threading
+from apps.aieditor.func.music_gen import musicGen
+import os
 
 
 app = Flask(__name__)
@@ -16,12 +19,14 @@ app.config["IMAGE_FOLDER"] = imgPath
 main_topics = []
 subtopics = []
 script_assistant_instance = None
+music_gen_instance = musicGen()
 
 
 @app.route("/", methods=["GET", "POST"])
 def main():
     global main_topics
     global script_assistant_instance
+    global music_gen_instance
 
     # 사용자 입력을 저장할 변수 초기화
     user_input = ""
@@ -58,6 +63,13 @@ def main():
                             user_input
                         )
                         show_subtopic_form = True
+
+                    ############ 주석 작성전
+                    if music_gen_instance:
+                        bgm_thread = threading.Thread(
+                            target=music_gen_instance.make_bgm, args=(user_input,)
+                        )
+                        bgm_thread.start()
 
             # "대본 상세 구성하기"이 클릭된 경우
             elif "sub-button" in request.form:
