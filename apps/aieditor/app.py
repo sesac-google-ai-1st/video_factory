@@ -3,12 +3,17 @@ from flask import Flask, render_template
 from flask import request, Response, url_for, redirect, session, flash
 from apps.aieditor.func.chain import ScriptAssistant
 from apps.aieditor.func.split_script import ScriptSplitter
-
+from apps.aieditor.func.tts_gan import voice_gan_wavenet
+from apps.aieditor.func.video_edit import add_static_image_to_video
+from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
 
 app = Flask(__name__)
 
 # session 사용을 위해 secret key를 설정
 app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
+
+# openai api key 이건 삭제하고 업로드
+api_key = ''
 
 imgPath = os.path.join("static", "image")
 app.config["IMAGE_FOLDER"] = imgPath
@@ -16,6 +21,53 @@ app.config["IMAGE_FOLDER"] = imgPath
 main_topics = []
 subtopics = []
 script_assistant_instance = None
+
+@app.route("/merge", methods=["GET", "POST"])
+def merge():
+    # message = ""
+    global api_key
+    maintheme = "폼페이의 마지막 날"
+    scripts = ["베수비오 화산이 폭발하던 그 순간, 폼페이는 어땠을까요? \
+                오늘 우리는 그 끔찍한 순간을 들여다봅니다. \
+                화산재와 용암으로 하늘이 뒤덮였고, 폼페이 사람들은 어떻게 반응했을까요? \
+                자, 이제 그들의 용기와 우리에게 전하는 메시지, 자연재해 앞에서 우리의 대처 방법을 함께 탐색해봅시다."
+               ]
+    splits = ScriptSplitter()
+
+    if request.method == "POST":
+        print("request : ", request)
+        print("request.form :", request.form)
+        
+        # 스크립트 나눠서 리스트에 담기        
+        split_text = splits.split_script2sentences(scripts)
+        print(split_text)
+
+        # 이미지 생성용 프롬프트 만들기
+        prompts = img_gan_prompt(maintheme, split_text)
+        print(prompts)
+        
+        # 더빙 음성 만들기
+        voice_gan_wavenet(split_text)
+
+        # 이미지 생성
+        # img_gan_dalle3(api_key, prompts)
+        
+        
+        # def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
+        image_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
+        audio_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
+        clip_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
+        output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+
+        add_static_image_to_video(image_path, audio_path, clip_path, output_path)
+
+        # 여기서 어떤 조건을 확인합니다. 예를 들어, 버튼이 클릭되었는지 확인합니다.
+        # if 'greet-button' in request.form:
+        #     # 조건에 따라 메시지를 변경합니다.
+        #     message = "안녕하세요!"
+        # else:
+        #     message = "버튼을 클릭해 주세요."
+    return render_template("merge.html") #, message=message)
 
 
 @app.route("/", methods=["GET", "POST"])

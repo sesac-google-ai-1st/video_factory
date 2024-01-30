@@ -42,12 +42,13 @@ def img_gan_dalle3(api_key, prompts):
         response = requests.get(image_url, stream=True)
 
         # 응답 상태 코드가 200 OK 인지 확인합니다.
-        img_filename = f'./images/{idx+1}.jpg'
+        img_filename = f'C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/{idx+1}.jpg'
 
         # 바이너리 쓰기 모드(b)로 파일을 열고 이미지 데이터를 기록합니다.
         with open(img_filename, 'wb') as out_file:
             # 이미지 데이터를 파일에 씁니다.
             out_file.write(response.content)
+            print(f"이미지 파일이 '{img_filename}'로 저장되었습니다.")
 
 
 
