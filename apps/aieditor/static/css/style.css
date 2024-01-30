@@ -1,26 +1,28 @@
+/* Font Imports */
 @import url('https://fonts.googleapis.com/css2?family=Dongle:wght@700&family=Gowun+Dodum&display=swap');
 
-*{
+/* Global Styles */
+* {
   font-family: 'Gowun Dodum';
 }
+
 /* 기본 스타일 설정 */
 body {
-    margin: 100px 0;
-    padding: 0;
-    /* background-image: url('/static/images/background.png'); */
-    background-size: cover; /* 이미지가 전체 화면을 덮도록 설정 */
-    background-position: center; /* 이미지가 중앙에 오도록 설정 */
-    background-repeat: no-repeat; /* 이미지가 반복되지 않도록 설정 */
-    background-color: #ffffff;
-    color: #333;
-    line-height: 1.2;
+  margin: 100px 0;
+  padding: 0;
+  background-size: cover; /* 이미지가 전체 화면을 덮도록 설정 */
+  background-position: center; /* 이미지가 중앙에 오도록 설정 */
+  background-repeat: no-repeat; /* 이미지가 반복되지 않도록 설정 */
+  background-color: #ffffff;
+  color: #333;
+  line-height: 1.2;
 }
 
 .container {
-    max-width: 1000px;
-    margin: auto; /* 상하 자동 마진을 사용하여 중앙 정렬 */
-    overflow: auto;
-    padding-left: 15%;
+  max-width: 1000px;
+  margin: auto; /* 상하 자동 마진을 사용하여 중앙 정렬 */
+  overflow: auto;
+  padding-left: 15%;
 }
 
 .maintopics-container{
@@ -29,21 +31,21 @@ body {
 }
 
 .full-width-section {
-    display: flex;
-    justify-content: center; /* 내부 요소를 가로축 중앙에 정렬 */
-    margin: 40px 20px; /* 상하 40px, 좌우 20px 마진을 추가 */
-    padding: 20px 0; /* 상하 패딩 없음, 좌우 0 */
-    box-sizing: border-box; /* 패딩과 테두리를 너비에 포함 */
+  display: flex;
+  justify-content: center; /* 내부 요소를 가로축 중앙에 정렬 */
+  margin: 40px 20px; /* 상하 40px, 좌우 20px 마진을 추가 */
+  padding: 20px 0; /* 상하 패딩 없음, 좌우 0 */
+  box-sizing: border-box; /* 패딩과 테두리를 너비에 포함 */
 }
 
 .left-section, .right-section {
-    flex: 1;
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    margin: 0 10px; /* 좌우에 마진 추가 */
-    /* position: relative; 는 필요한 경우에만 추가 */
+  flex: 1;
+  background-color: #ffffff;
+  padding: 0 20px 20px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin: 0 10px; /* 좌우에 마진 추가 */
+  /* position: relative; 는 필요한 경우에만 추가 */
 }
 
 /* script.html 화면에서 정보 표시 */
@@ -59,231 +61,263 @@ body {
 }
 
 .model-info {
-font-family: 'Dongle';
-font-size: xx-large;
-float: right;
+  font-family: 'Dongle';
+  font-size: xx-large;
+  float: right;
 }
 
 /* 폼 스타일링 */
 .form-group {
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
 }
 
 input[type="text"] {
-    width: 50% ;
-    padding: 20px;
-    margin-bottom: 10px;
-    margin: 15px; 
-    align-items: center;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  width: 50% ;
+  padding: 20px;
+  margin-bottom: 10px;
+  margin: 15px; 
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .button {
-    position: relative;
-    padding: 8px 16px;
-    background: #3baaff;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 2px;
-    cursor: pointer;
-  }
-  
-  .button:active {
-    background: #3baaff;
-  }
-  
-  .button__text {
-    font: bold 16px "Gowun Dodum", san-serif;
-    color: #ffffff;
-    transition: all 0.2s;
-  }
-  
-  .button--loading {
-    pointer-events: none;
+  position: relative;
+  padding: 8px 16px;
+  background: #3baaff;
+  color: white;
+  border: none;
+  outline: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.button:active {
+  background: #3baaff;
+}
+
+.button__text {
+  font: bold 16px "Gowun Dodum", san-serif;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.button--loading {
+  pointer-events: none;
+}
+
+.button--loading .button__text {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.button--loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border: 4px solid transparent;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: button-loading-spinner 1s ease infinite;
+}
+
+@keyframes button-loading-spinner {
+  from {
+    transform: rotate(0turn);
   }
 
-  .button--loading .button__text {
-    visibility: hidden;
-    opacity: 0;
+  to {
+    transform: rotate(1turn);
   }
-  
-  .button--loading::after {
-    content: "";
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
-    border: 4px solid transparent;
-    border-top-color: #ffffff;
-    border-radius: 50%;
-    animation: button-loading-spinner 1s ease infinite;
-  }
-  
-  @keyframes button-loading-spinner {
-    from {
-      transform: rotate(0turn);
-    }
-  
-    to {
-      transform: rotate(1turn);
-    }
-  }
+}
 
- .button:hover {
-    background-color: #334063;
+.button:hover {
+  background-color: #334063;
 }
 
 /* 체크박스와 소주제 제목 스타일 */
 .subtopic-item, .maintopic-item {
-    display: flex;
-    align-items: center;
-    margin: 10px 0;
-    border: 1px solid #fff;
-    padding: 10px;
-    border-radius: 4px;
-    background-color: #f5f9ff;
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+  border: 1px solid #fff;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f5f9ff;
 }
 
 .subtopic-title, .maintopic-title {
-    margin-left: 10px;
-    margin-right: 10px;
-    flex-grow: 1;
-    font-weight: bold;
-    color: #363636;
-    width: inherit;
+  margin-left: 10px;
+  margin-right: 10px;
+  flex-grow: 1;
+  font-weight: bold;
+  color: #363636;
+  width: inherit;
 }
 
 /* 스크립트 박스 스타일 */
 .script-box {
-    width: 98%;
-    height: 100px; /* 고정 높이 */
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 10px;
-    resize: vertical; /* 세로 방향으로만 크기 조절 가능 */
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 96%;
+  height: 150px; /* 고정 높이 */
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  resize: vertical; /* 세로 방향으로만 크기 조절 가능 */
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 @media screen and (max-width: 768px) {
-    .full-width-section {
-        flex-direction: column;
-    }
+  .full-width-section {
+      flex-direction: column;
+  }
 
-    .left-section, .right-section {
-        width: 100%;
-        margin: 10px 0;
-    }
+  .left-section, .right-section {
+      width: 100%;
+      margin: 10px 0;
+  }
 }
 
 #sub-button, #script-button {
-    width: 100%; /* 버튼을 전체 너비로 확장 */
-    padding: 12px 0; /* 상하 패딩 증가 */
-    font-size: 18px; /* 글꼴 크기 증가 */
+  width: 100%; /* 버튼을 전체 너비로 확장 */
+  padding: 12px 0; /* 상하 패딩 증가 */
+  font-size: 18px; /* 글꼴 크기 증가 */
 }
 
 /* 메인 헤더 스타일 */
 .main-header {
-    text-align: center;
-    padding: 20px 0;
-    background-color: #ffffff;
-    color: rgb(255, 255, 255);
+  text-align: center;
+  padding: 20px 0;
+  background-color: #ffffff;
+  color: rgb(255, 255, 255);
 }
 
 .main-header h1 {
-    color: #000000;
-    margin: 0;
-    font-size: 20px;
+  color: #000000;
+  margin: 0;
+  font-size: 20px;
 }
 
 
 /* 드롭박스 스타일링 */
 select {
-    flex: 2;
-    padding: 10px;
-    margin-right: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: white; /* 배경 색상 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
-    color: #333; /* 글자 색상 */
-    cursor: pointer; /* 커서 스타일 */
+  flex: 2;
+  padding: 10px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white; /* 배경 색상 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+  color: #333; /* 글자 색상 */
+  cursor: pointer; /* 커서 스타일 */
 }
 
 /* 드롭박스 활성화될 때 스타일 */
 select:focus {
-    border-color: #888; /* 포커스 시 테두리 색 변경 */
-    outline: none; /* 기본 아웃라인 제거 */
+  border-color: #888; /* 포커스 시 테두리 색 변경 */
+  outline: none; /* 기본 아웃라인 제거 */
 }
 
 .selected-subtopic {
-    color: rgb(7, 7, 7);
+  color: rgb(7, 7, 7);
 }
 
 .script-box-container {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .float-right {
-    float: right;
+  float: right;
 }
 
 .script-box-container button {
-    width: 30px;
-    height: 30px;
-    padding: 5px;
-    background-color: #3baaff;
-    color: white;
-    margin-left: 5px;
-    cursor: pointer;
-    text-align: center;
-    line-height: 1;
-    border: none;
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  background-color: #3baaff;
+  color: white;
+  margin-left: 5px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1;
+  border: none;
 }
 
 /* 옵션 스타일링 */
 option {
-    padding: 10px; /* 옵션 내 패딩 */
-    background-color: white; /* 옵션 배경 색상 */
-    color: #333; /* 옵션 글자 색상 */
+  padding: 10px; /* 옵션 내 패딩 */
+  background-color: white; /* 옵션 배경 색상 */
+  color: #333; /* 옵션 글자 색상 */
 }
 
 .flash-message {
-    color: red;
-    display: block;
+  color: red;
+  display: block;
 }
 
 #topic-form .flash-message {
-    padding-left: 3%;
+  padding-left: 3%;
 }
 
 /* 체크박스 스타일링 */
 /*input 은 숨겨주기*/
 input[type=checkbox]{
-display:none;
+  display:none;
 }
+
   /*input 바로 다음의 label*/
 input[type=checkbox] + label{
-padding-left: 25px;
-position: relative;
-cursor:pointer;
+  padding-left: 25px;
+  position: relative;
+  cursor:pointer;
 }
   
   /*input 바로 다음의 label:before 에 체크하기 전 CSS 설정*/
 input[type=checkbox] + label:before{
-content: '';display: block;width: 15px;height: 15px;border-radius: 3px;position: absolute;top: 50%;margin-top: -9px;left: 0;border: 1px solid #d3d3d3;/*체크 전과 체크 후 높이 차이 때문에 설정*/
+  content: '';display: block;width: 15px;height: 15px;border-radius: 3px;position: absolute;top: 50%;margin-top: -9px;left: 0;border: 1px solid #d3d3d3;/*체크 전과 체크 후 높이 차이 때문에 설정*/
 }
     
   /*checked된 input 바로 다음의 label:before 에 체크 후 CSS 설정*/  
 input[type=checkbox]:checked + label:before{
-border-color: #000;font-family: 'Font Awesome 5 Free';content: '\f00c';color: #0594fa;font-weight: bold;text-align: center;font-size: 15px;line-height: 15px; border: 1px solid #0594fa;
+  border-color: #000;font-family: 'Font Awesome 5 Free';content: '\f00c';color: #0594fa;font-weight: bold;text-align: center;font-size: 15px;line-height: 15px; border: 1px solid #0594fa;
+}
+
+/* bgm 확인용 모달창 */
+.modal {
+  position:absolute;
+  display: none;
+  justify-content: center;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(0, 0, 0, 0.4)
+}
+
+/* .modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+} */
+
+.modal_body{
+  position:absolute;
+  top:50%;
+  width:400px;
+  height:250px;
+  padding:40px;  
+  text-align: center;
+  background-color: rgb(255,255,255);
+  border-radius:10px;
+  box-shadow:0 2px 3px 0 rgba(34,36,38,0.15);
+  transform:translateY(-50%);
 }

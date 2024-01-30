@@ -4,19 +4,38 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>영상 생성기</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/video.css') }}">
     </head>
     <body>
         <header class="main-header">
-            <h1>유튜브 영상 대본을 빠르게 작성해보세요!</h1>
+            <h1>영상 생성중</h1><br>
+            <div class="loading">
+                <span>잠</span>
+                <span>시</span>
+                <span>만</span>
+                <span>  </span>
+                <span>기</span>
+                <span>다</span>
+                <span>려</span>
+                <span>주</span>
+                <span>세</span>
+                <span>요</span>
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+            </div>
         </header>
         
-        {% for i in script_list %}
-            <p>{{i}}</p>
-        {% endfor %}
+        <div class="container">    
+            <div class="progress progress-moved">
+              <div class="progress-bar" >
+              <div class="progress-text" ></div>
+              </div>                       
+            </div> 
+          </div>
 
         
-        <script src="{{ url_for('static', filename='js/script.js') }}">
+        <script src="{{ url_for('static', filename='js/video_script.js') }}">
         </script>
     </body>
 </html>
