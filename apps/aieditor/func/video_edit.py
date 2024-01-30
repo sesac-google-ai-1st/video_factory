@@ -18,7 +18,7 @@ subtitle_text = ["1_dfssdf", "2_asdf", "3sdfs", "last song!"]
 
 # 이미지 -> 비디오 클립으로 변환(더빙 길이 만큼)
 # 절대 경로를 넣어줘야함
-##################### old code ################################################# 
+##################### old code #################################################
 # def add_static_image_to_video(image_path, audio_path, output_path):
 #     """_summary_
 #     같은 이름의 image와 audio 파일을 합쳐서 video로 만드는 함수
@@ -50,7 +50,7 @@ subtitle_text = ["1_dfssdf", "2_asdf", "3sdfs", "last song!"]
 #     # print(clips)
 
 #     # output path 폴더로 이동
-    
+
 #     folderName = os.path.split(output_path)[-1]
 #     print(os.path.split(output_path)[-1])
 #     os.chdir(f"{folderName}")
@@ -77,6 +77,7 @@ subtitle_text = ["1_dfssdf", "2_asdf", "3sdfs", "last song!"]
 
 #     # 결과 영상 파일 생성
 #     final_clip.write_videofile(output_path + "merge_video.mp4", fps=24)
+
 
 ##################### new code ############################
 def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
@@ -109,9 +110,8 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
         clip_name = os.path.splitext(image_file)[0]
         video_clip.write_videofile(clip_path + f"{clip_name}.mp4", fps=24)
 
-
     # clip_path 폴더에서 파일 목록을 가져옴
-    clips = os.listdir(clip_path)
+    clips = [file for file in os.listdir(clip_path) if file.endswith(".mp4")]
 
     # 비디오 클립과 트랜지션 비디오를 저장할 리스트 초기화
     video_clips = []
@@ -120,18 +120,20 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
     for i in range(len(clips) - 1):  # 마지막 클립은 다음 클립과 트랜지션할 수 없으므로 len(clips) - 1까지 반복
         # 현재 비디오 클립을 video_clips 리스트에 추가
         video_clips.append(VideoFileClip(clip_path + clips[i]))
-        
+
         # 트랜지션 결과 파일명 생성
         transition_output = f"result{i+1}"
-        
+
         # vid_transition.py 스크립트를 사용하여 트랜지션 비디오 생성
         # 현재 비디오와 다음 비디오를 입력으로 제공하고, 트랜지션 효과, 프레임 수, 아웃풋 파일명을 지정
-        os.system(f"python {clip_path}vid_transition.py -i {clip_path}{clips[i]} {clip_path}{clips[i+1]} -a translation -n 30 -o {clip_path}{transition_output}.mp4")
-        
+        os.system(
+            f"python {clip_path}vid_transition.py -i {clip_path}{clips[i]} {clip_path}{clips[i+1]} -a translation -n 30 -o {clip_path}{transition_output}.mp4"
+        )
+
         # 생성된 트랜지션 비디오 파일의 경로를 구성
         phase1_path = clip_path + f"{transition_output}_phase1.mp4"
         phase2_path = clip_path + f"{transition_output}_phase2.mp4"
-        
+
         # 트랜지션 비디오 파일이 존재하는지 확인하고, 존재한다면 video_clips 리스트에 추가
         if os.path.exists(phase1_path):
             video_clips.append(VideoFileClip(phase1_path))
@@ -140,13 +142,12 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
 
     # 마지막 비디오 클립을 video_clips 리스트에 추가
     video_clips.append(VideoFileClip(clip_path + clips[-1]))
-    
+
     # 영상 파일 합치기
     final_clip = concatenate_videoclips(video_clips, method="compose")
 
     # 결과 영상 파일 생성
     final_clip.write_videofile(output_path + "merge_video.mp4", fps=24)
-
 
 
 # 자막 파일 생성하기
