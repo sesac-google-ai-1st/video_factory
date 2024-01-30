@@ -4,6 +4,8 @@ import torch
 
 # pip install git+https://github.com/huggingface/transformers.git
 
+
+# cuda gpu사용 가능한지 여부 확인
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"ussing device : {device}")
 
