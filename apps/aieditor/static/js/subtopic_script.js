@@ -63,13 +63,13 @@ function deleteScriptBox(button) {
 
 
 /**
-   * 선택한 subtopic을 strong 요소에 담고, 
-   * 그 subtopic에 해당하는 script를 담을 textarea를 만들어서 반환하는 함수.
-   * script-box-container의 위 아래 순서를 바꾸거나, 삭제하는 버튼을 추가하였습니다.
-   * @param {Array} checkedNames - 선택된 체크박스의 names을 담은 리스트.
-   * @param {number} index - script의 순서를 가리키는 인덱스. subtopic이 n개 선택된 경우, 그 중 몇번째인지 구분하는 역할.
-   * @returns {HTMLTextAreaElement} 만들어진 textarea 요소.
-   */
+ * 선택한 subtopic을 strong 요소에 담고, 
+ * 그 subtopic에 해당하는 script를 담을 textarea를 만들어서 반환하는 함수.
+ * script-box-container의 위 아래 순서를 바꾸거나, 삭제하는 버튼을 추가하였습니다.
+ * @param {Array} checkedNames - 선택된 체크박스의 names을 담은 리스트.
+ * @param {number} index - script의 순서를 가리키는 인덱스. subtopic이 n개 선택된 경우, 그 중 몇번째인지 구분하는 역할.
+ * @returns {HTMLTextAreaElement} 만들어진 textarea 요소.
+ */
 function createTextarea(checkedNames, index) {
     const scriptBoxes = document.querySelector('.script-boxes'); // 선택한 subtopic과 textarea가 표시될 부모 요소.
 
@@ -107,6 +107,71 @@ function createTextarea(checkedNames, index) {
     divElement.appendChild(textarea);
     return textarea;
 }
+
+
+/**
+ * bgm 확인용 창 띄우기
+ * checkFile로 서버에 BGM 파일이 생성되었는지 확인하고, 생성되었다면 팝업 창을 띄움.
+ * @param {HTMLElement} button - 클릭된 bgm 버튼 요소
+ */
+const bgmButton = document.getElementById('bgm-button');
+
+bgmButton.addEventListener("click", (event) => {
+  event.preventDefault(); 
+  console.log("BGM 버튼 클릭");
+  checkFile();
+});
+
+function checkFile() {
+  var user_input = document.getElementById('user_input').innerText;
+  var filePath = `static/audio/musicgen_${user_input}.wav`;
+  // 파일 존재 여부 확인
+  fetch(filePath, { method: 'GET' })
+      .then(response => {
+          if (response.ok) {
+            bgmButton.classList.remove('button--loading');
+            document.getElementById('music_player').src = filePath;
+            openModal();
+          } else {
+            // 파일이 아직 생성되지 않았으면 재귀적으로 계속 확인
+            setTimeout(checkFile, 15000);  // 15초마다 확인
+          }
+      })
+      .catch(error => {
+          // 에러 발생 시 처리
+          console.error('Error checking file:', error);
+      });
+}
+
+
+function openModal() {
+  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  const audio = document.querySelector('audio');
+  if (audio) {
+    audio.volume = 0.5;   // 기본 볼륨 0.5로 설정
+  }
+  modal.style.display = 'flex';
+}
+
+function closeModal(event) {
+  event.preventDefault();
+  const audio = document.querySelector('audio');
+  if (audio) {
+    audio.pause();   // 오디오 멈추기
+    audio.currentTime = 0;    // 오디오 시작지점으로 바꾸기
+  }
+  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  modal.style.display = 'none';
+}
+
+// 모달 외부 클릭 시 닫기
+window.onclick = function(event) {
+  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  if (event.target === modal) {
+    closeModal(event);
+  }
+};
+
   
 
 //#region 이벤트
@@ -202,9 +267,9 @@ scriptform.addEventListener("submit", async (event) => {
  * 모든 textarea의 innerValue를 읽어서 배열에 저장한 후, Flask 서버에 요청을 보냄.
  * @param {Event} event - 폼 제출 이벤트
  */
-const videoForm = document.getElementById("video-form");
+const videoButton = document.getElementById("video-button");
 
-videoForm.addEventListener("submit", async (event) => {
+videoButton.addEventListener("click", async (event) => {
   event.preventDefault();
 
   // 모든 textarea의 innerValue를 읽어서 배열에 저장
