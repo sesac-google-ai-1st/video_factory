@@ -1,0 +1,8 @@
+kiwipiepy==0.16.2
+flask==3.0.1
+python-dotenv==1.0.1
+langchain==0.1.4
+langchain_google_genai==0.0.6
+transformers==4.37.2
+scipy==1.12.0
+torch==2.1.2
