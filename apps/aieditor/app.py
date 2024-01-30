@@ -52,7 +52,7 @@ def merge():
         voice_gan_wavenet(split_text)
 
         # 이미지 생성
-        # img_gan_dalle3(api_key, prompts)
+        img_gan_dalle3(api_key, prompts)
 
         # def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
         image_path = (
@@ -70,12 +70,6 @@ def merge():
 
         add_static_image_to_video(image_path, audio_path, clip_path, output_path)
 
-        # 여기서 어떤 조건을 확인합니다. 예를 들어, 버튼이 클릭되었는지 확인합니다.
-        # if 'greet-button' in request.form:
-        #     # 조건에 따라 메시지를 변경합니다.
-        #     message = "안녕하세요!"
-        # else:
-        #     message = "버튼을 클릭해 주세요."
     return render_template("merge.html")  # , message=message)
 
 
