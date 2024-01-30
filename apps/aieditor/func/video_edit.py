@@ -6,16 +6,7 @@ import datetime
 import os
 from moviepy.video.fx.all import *
 
-# change_settings(
-#     {"IMAGEMAGICK_BINARY": r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"}
-# )
-
-# 데이터 폴더/파일 경로(img, audio, test, video, subtitle)
-
-subtitle_text = ["1_dfssdf", "2_asdf", "3sdfs", "last song!"]
-
-
-def add_static_image_to_video(image_path, audio_path, output_path):
+def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
     """_summary_
     같은 이름의 image와 audio 파일을 합쳐서 video로 만드는 함수
     image path와 audio path, output path를 인수로 주면 이미지 폴더와 오디오폴더 속 파일을 합쳐 output 폴더로 동영상울 출력합니다. 영상간의 transition은 따로 출력되어 output 파일에 저장됩니다.
@@ -23,7 +14,9 @@ def add_static_image_to_video(image_path, audio_path, output_path):
     이미지와 오디오가 합쳐진 영상과 영상간의 transition이 합쳐져 merge_video로 출력됩니다.
     """
     image_files = os.listdir(image_path)  # image와 audio 파일을 받아 list로 저장
+    print(image_files)
     audio_files = os.listdir(audio_path)
+    print(audio_files)
 
     # empty list 생성
     clips = []
@@ -41,32 +34,42 @@ def add_static_image_to_video(image_path, audio_path, output_path):
 
         # 비디오 파일을 만들어 클립 리스트에 추가
         clip_name = os.path.splitext(image_file)[0]
-        video_clip.write_videofile(output_path + f"{clip_name}.mp4", fps=24)
-        clips.append(video_clip)
-    # print(clips)
+        video_clip.write_videofile(clip_path + f"{clip_name}.mp4", fps=24)
 
-    # output path 폴더로 이동
-    folderName = os.path.split(output_path)[-1]
-    os.chdir(f"{folderName}")
+    # clip_path 폴더에서 파일 목록을 가져옴
+    clips = [file for file in os.listdir(clip_path) if file.endswith(".mp4")]
 
-    # clip들 간의 transition 생성하기
-    for i in range(len(clips)):
-        clip = clips[i]
-        video_clips.append(clip)
+    # 비디오 클립과 트랜지션 비디오를 저장할 리스트 초기화
+    video_clips = []
 
-        # vid_transition 파일을 활용하여 video간의 트랜지션 비디오를 출력
+    # clips 리스트의 각 비디오 파일에 대해 반복
+    for i in range(len(clips) - 1):  # 마지막 클립은 다음 클립과 트랜지션할 수 없으므로 len(clips) - 1까지 반복
+        # 현재 비디오 클립을 video_clips 리스트에 추가
+        video_clips.append(VideoFileClip(clip_path + clips[i]))
+
+        # 트랜지션 결과 파일명 생성
+        transition_output = f"result{i+1}"
+
+        # vid_transition.py 스크립트를 사용하여 트랜지션 비디오 생성
+        # 현재 비디오와 다음 비디오를 입력으로 제공하고, 트랜지션 효과, 프레임 수, 아웃풋 파일명을 지정
         os.system(
-            f"python vid_transition.py -i {i+1}.mp4 {i+2}.mp4 --animation translation --num_frames 30 --max_brightness 1.5"
+            f"python {clip_path}vid_transition.py -i {clip_path}{clips[i]} {clip_path}{clips[i+1]} -a translation -n 30 -o {clip_path}{transition_output}.mp4"
         )
 
-        # 트랜지션 비디오가 있으면 video_vlips에 추가, 없으면 패스
-        if os.path.exists(output_path + f"vt{i+1}_phase1.mp4") == True:
-            trans_clips1 = VideoFileClip(output_path + f"vt{i+1}_phase1.mp4")
-            video_clips.append(trans_clips1)
-            trans_clips2 = VideoFileClip(output_path + f"vt{i+1}_phase2.mp4")
-            video_clips.append(trans_clips2)
+        # 생성된 트랜지션 비디오 파일의 경로를 구성
+        phase1_path = clip_path + f"{transition_output}_phase1.mp4"
+        phase2_path = clip_path + f"{transition_output}_phase2.mp4"
 
-    # 모든 클립을 하나로 합치기
+        # 트랜지션 비디오 파일이 존재하는지 확인하고, 존재한다면 video_clips 리스트에 추가
+        if os.path.exists(phase1_path):
+            video_clips.append(VideoFileClip(phase1_path))
+        if os.path.exists(phase2_path):
+            video_clips.append(VideoFileClip(phase2_path))
+
+    # 마지막 비디오 클립을 video_clips 리스트에 추가
+    video_clips.append(VideoFileClip(clip_path + clips[-1]))
+
+    # 영상 파일 합치기
     final_clip = concatenate_videoclips(video_clips, method="compose")
 
     # 결과 영상 파일 생성
@@ -86,7 +89,7 @@ def make_subtitle(audio_path, video_path, txt_list):
         video_path (str): video 파일이 들어있는 폴더를 지정합니다.
         txt_list (list): 자막에 들어갈 텍스트를 리스트 형태로 받습니다.
     """
-    srt = open("sample.srt", "w+")
+    srt = open("./srt/sample.srt", "w+")
 
     # empty list 생성
     second_list = []
