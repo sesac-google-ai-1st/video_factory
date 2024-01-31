@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>영상 생성기</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <header class="main-header">
+            <h1>유튜브 영상 대본을 빠르게 작성해보세요!</h1>
+        </header>
+        <div class="full-width-section">
+            <!-- 왼쪽 섹션 -->
+            <div class="left-section">
+                <!-- main.html에서 사용자가 입력하고 선택한 정보들 표시 -->
+                <h3 class="text-info">Video Keyword
+                    <span class="model-info">
+                        {% if selected_model == 'Gemini' %}
+                            <img src="{{ gemini_logo }}" alt="GEMINI" width="60" height="45">
+                        {% elif selected_model == 'GPT' %}
+                            <img src="{{ gpt_logo }}" alt="GPT" width="30" height="30">
+                        {% endif %}
+                    </span>
+                    <div class="user-input-info" id="user_input">{{ user_input }}</div>
+				</h3>
+                <h3 class="text-info">Main Topic <div class="user-input-info">{{ selected_maintopic }}</div></h3>
+                <!-- 스크립트 생성 폼 -->
+                <form method="post" id="script-form">
+                    <!-- 인풋창의 내용을 유지하기 위해 숨겨진 필드 추가 -->
+                    <input type="hidden" name="user_input" value="{{ user_input }}">
+                    <div class="subtopics-container">
+                        {% for i in range(1, 11) %}
+                            <label for="subtopic_check{{i}}">
+                                <div class="subtopic-item">
+                                    <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
+                                    <span class="subtopic-title" id="subtopic{{i}}">{{ subtopics[i-1] }}</span>
+                                    <input type="checkbox" class="subtopic-checkbox" id="subtopic_check{{i}}" name="subtopic{{ i }}"/>
+                                    <label for="subtopic_check{{i}}"></label>
+                                </div>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    <button class="button" type="submit" name="script-button" id="script-button" onclick="this.classList.toggle('button--loading')">
+                        <span class="button__text">스크립트 생성</span>
+                    </button>
+                </form>
+            </div>
+            <!-- 오른쪽 섹션 -->
+            <div class="right-section">
+                <div class="selected-subtopic"><h3>영상 스크립트 </h3></div>
+                <div class="script-boxes">
+                    <!-- 이곳에 선택한 subtopic과 textarea가 표시됩니다. -->
+                </div>
+                <form method="post" id="video-form">
+                    <button class="button" type="submit" name="video-button" id="video-button" style="float: right;">
+                        <span class="button__text">영상 만들기</span>
+                    </button>
+                    <button class="button" onclick="this.classList.toggle('button--loading');" name="bgm-button" id="bgm-button" style="float: right; margin-right: 10px;">
+                        <span class="button__text">BGM</span>
+                    </button>
+                    <div class="modal" id="bgm-model">
+                        <div class="modal_body">
+                            <h2>생성된 배경음원 확인하기</h2>
+                            <audio controls id="music_player">
+                                <source type="audio/wav" style="margin-bottom: 20px;">
+                                브라우저가 오디오를 지원하지 않습니다. 
+                            </audio><br>
+                            <div class="radio" style="margin-top: 20px;">
+                                <input type="radio" id="use-bgm" name="backgroundmusic" value="use-bgm" />
+                                <label for="use-bgm">배경음악 사용하기</label>
+                                <input type="radio" id="unuse-bgm" name="backgroundmusic" value="unuse-bgm" />
+                                <label for="unuse-bgm">배경음악 없이 동영상 생성</label>
+                            </div>
+                            <button class="button" onclick="closeModal(event)" style="float: right; margin-top: 20px;">닫기</button>
+                        </div>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='js/subtopic_script.js') }}">
+        </script>
+    </body>
+</html>
