@@ -25,6 +25,7 @@ main_topics = []
 subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
+background_music_option = "no"
 
 
 @app.route("/merge", methods=["GET", "POST"])
@@ -100,7 +101,7 @@ def main():
             user_input = request.form.get("user_input")
             selected_model = request.form.get("modelSelect")
 
-            # "주제" 버튼이 눌린 경우
+            # "주제 생성" 버튼이 눌린 경우
             if "main-button" in request.form:
                 # 영상 주제 / 모델이 없다면 입력 혹은 선택하라고 사용자에게 피드백 flash
                 if not user_input or not selected_model:
@@ -119,10 +120,17 @@ def main():
                         )
                         show_subtopic_form = True
 
-                    ############ 주석 작성전
+                    # musicGen 인스턴스가 생성되어 있는 경우, 병렬로 배경음악 생성 시작
+                    # 배경음악 생성에 시간이 걸려서, "주제 생성" 버튼이 눌렸을 때 생성하기 시작함
                     if music_gen_instance:
+                        user_input_en = script_assistant_instance.translate2en(
+                            user_input
+                        )
+                        session["user_input_en"] = user_input_en
+
+                        print("===== BGM 생성을 시작합니다. =====")
                         bgm_thread = threading.Thread(
-                            target=music_gen_instance.make_bgm, args=(user_input,)
+                            target=music_gen_instance.make_bgm, args=(user_input_en,)
                         )
                         bgm_thread.start()
 
@@ -141,7 +149,6 @@ def main():
                         subtopics = script_assistant_instance.make_subtopics(
                             user_input, selected_maintopic
                         )
-                        print(subtopics)
 
                         # session에 데이터 저장
                         session["user_input"] = user_input
@@ -163,8 +170,11 @@ def main():
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
+    global background_music_option
+
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
+    user_input_en = session.get("user_input_en", "")
     selected_model = session.get("selected_model", "")
     selected_maintopic = session.get("selected_maintopic", "")
     subtopics = session.get("subtopics", "")
@@ -178,23 +188,26 @@ def script():
         print("request:", request)
         print("request.form:", request.form)
 
+        # 배경음악을 선택한 경우
+        if "backgroundmusic" in request.json:
+            background_music_option = request.json["backgroundmusic"]
+            print("BGM 선택!!!", background_music_option)
+
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
-        if not (request.form) and request.json.get("script_button"):
+        elif "script_button" in request.json:
             print("request.json:", request.json)
 
             # checkedNames : 선택된 체크박스의 name(subtopic{i})들을 리스트로 반환(script.js의 getCheckedCheckboxNames 참고)
             checkedNames = request.json["checkedNames"]
-            print(checkedNames)
 
             # ScriptAssistant 인스턴스가 생성되어 있을 경우에만 make_scripts 호출
             if script_assistant_instance:
                 # selected_idx : subtopic{i}의 숫자"i"만 추출
                 selected_idx = list(map(lambda name: int(name[8:]), checkedNames))
-                print(selected_idx)
+                print("선택된 소주제 번호:", selected_idx)
 
                 # selected_list : selected_idx에 해당하는 영어 subtopic
                 selected_list = script_assistant_instance.select_subtopics(selected_idx)
-                print(selected_list)
 
                 # 선택된 소주제에 대한 스크립트 생성
                 def event_stream():
@@ -214,6 +227,7 @@ def script():
                     """
                     try:
                         for i in range(len(checkedNames)):
+                            print(f"===== {i+1}번째 스크립트를 작성합니다. =====")
                             for chunk in script_assistant_instance.make_scripts(
                                 selected_maintopic, selected_list, str(i + 1)
                             ):
@@ -223,6 +237,7 @@ def script():
                                 else:
                                     # Gemini가 empty string을 생성하고 작동을 멈추는 경우가 있기 때문에, 에러를 발생시킴
                                     raise Exception("⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️")
+                            print(f"===== {i+1}번째 스크립트를 작성 완료! =====")
                             yield "End of script"
                         yield "The end"
                     except Exception as e:
@@ -234,12 +249,14 @@ def script():
                 return Response(event_stream(), mimetype="text/event-stream")
 
         # "영상 만들기" 버튼이 눌린 경우
-        elif not (request.form) and request.json.get("video_button"):
+        elif "video_button" in request.json:
             script_data = request.json.get("scriptData")
             session["script_data"] = script_data
 
             # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
             # return redirect(url_for("video"))
+
+    print("BGM 기본값:", background_music_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
@@ -250,6 +267,7 @@ def script():
         selected_model=selected_model,
         selected_maintopic=selected_maintopic,
         subtopics=subtopics,
+        user_input_en=user_input_en,
     )
 
 
