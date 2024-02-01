@@ -206,6 +206,7 @@ def script():
     )
 
 
+# video 생성 완료 시 socket을 통해 /video에 전달
 @socketio.on("video_generation_complete", namespace="/video")
 def handle_video_generation_complete():
     print("video_generation_complete 이벤트를 발생시킵니다.")
@@ -227,7 +228,7 @@ def video():
     prompts = img_gan_prompt(maintheme, script_list)
     print(prompts)
 
-    # 비디오 생성 쓰레드 시작
+    # 비디오 생성 쓰레드 만들기
     def start_video_thread():
         with app.app_context():
             image_path = (
@@ -243,12 +244,15 @@ def video():
 
             add_static_image_to_video(image_path, audio_path, clip_path, output_path)
 
+    # voice, image를 생성한 후
     def thread_start():
         global video_generation_complete
         with app.app_context():
             try:
                 voice_gan_wavenet(script_list)
-                # img_gan_dalle3(api_key, prompts)
+                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts))
+                # start_image.start()
+                # start_image.join()
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
@@ -256,16 +260,17 @@ def video():
                 video_generation_complete = True
                 socketio.emit("video_generation_complete", namespace="/video")
 
-                # 비디오 생성이 완료되면 merge.html로 리다이렉트
+                # 비디오 생성이 완료되면 download_video로 리다이렉트
                 return redirect(url_for("download_video"))
             except Exception as e:
                 # 예외가 발생하면 여기에서 처리
                 print(f"Error: {e}")
 
+    # 앞선 함수들 전부 실행하는 스레드 시작
     thread = threading.Thread(target=thread_start)
     thread.start()
 
-    # video.html 화면에서 merge.html 화면으로 리다이렉트
+    # video.html 화면 띄우기
     return render_template("video.html")
 
 
