@@ -231,7 +231,6 @@ def script():
 @app.route("/check_image/<int:index>", methods=["GET"])
 def check_image(index):
     global total_image_count
-    total_image_count = 4
 
     image_folder_path = (
         "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
@@ -270,6 +269,8 @@ def handle_video_generation_complete():
 
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
+    global total_image_count
+
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
     maintheme = session.get("selected_maintopic", "")
@@ -277,6 +278,7 @@ def video():
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
     script_list = script_splitter_instance.split_script2sentences(script_data)
+    total_image_count = len(script_list)  # 총 생성될 이미지 개수 = 문장 개수
 
     # 이미지 생성용 프롬프트 만들기
     prompts = img_gan_prompt(maintheme, script_list)
