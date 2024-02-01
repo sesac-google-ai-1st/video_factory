@@ -23,7 +23,7 @@
                             <img src="{{ gpt_logo }}" alt="GPT" width="30" height="30">
                         {% endif %}
                     </span>
-                    <div class="user-input-info" id="user_input">{{ user_input }}</div>
+                    <div class="user-input-info" id="user_input" value="{{ user_input_en }}">{{ user_input }}</div>
 				</h3>
                 <h3 class="text-info">Main Topic <div class="user-input-info">{{ selected_maintopic }}</div></h3>
                 <!-- 스크립트 생성 폼 -->
@@ -60,24 +60,23 @@
                     <button class="button" onclick="this.classList.toggle('button--loading');" name="bgm-button" id="bgm-button" style="float: right; margin-right: 10px;">
                         <span class="button__text">BGM</span>
                     </button>
-                    <div class="modal" id="bgm-model">
-                        <div class="modal_body">
-                            <h2>생성된 배경음원 확인하기</h2>
-                            <audio controls id="music_player">
-                                <source type="audio/wav" style="margin-bottom: 20px;">
-                                브라우저가 오디오를 지원하지 않습니다. 
-                            </audio><br>
-                            <div class="radio" style="margin-top: 20px;">
-                                <input type="radio" id="use-bgm" name="backgroundmusic" value="use-bgm" />
-                                <label for="use-bgm">배경음악 사용하기</label>
-                                <input type="radio" id="unuse-bgm" name="backgroundmusic" value="unuse-bgm" />
-                                <label for="unuse-bgm">배경음악 없이 동영상 생성</label>
-                            </div>
-                            <button class="button" onclick="closeModal(event)" style="float: right; margin-top: 20px;">닫기</button>
-                        </div>
-                    </div>
                 </form>
-                
+                <div class="modal" id="bgm-model">
+                    <div class="modal_body">
+                        <h2>생성된 배경음원 확인하기</h2>
+                        <audio controls id="music_player">
+                            <source type="audio/wav" style="margin-bottom: 20px;">
+                            브라우저가 오디오를 지원하지 않습니다. 
+                        </audio><br>
+                        <div class="radio" style="margin-top: 20px;">
+                            <input type="radio" id="use-bgm" name="backgroundmusic" value="yes" onclick="useornotBgm(this)"/>
+                            <label for="use-bgm">배경음악 사용하기</label>
+                            <input type="radio" id="unuse-bgm" name="backgroundmusic" value="no" onclick="useornotBgm(this)" />
+                            <label for="unuse-bgm">배경음악 없이 동영상 생성</label>
+                        </div>
+                        <button class="button" onclick="closeModal(event)" style="float: right; margin-top: 20px;">닫기</button>
+                    </div>
+                </div>
             </div>
         </div>
         <script src="{{ url_for('static', filename='js/subtopic_script.js') }}">

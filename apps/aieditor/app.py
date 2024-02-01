@@ -1,6 +1,7 @@
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 from flask import request, Response, url_for, redirect, session, flash
+from flask_socketio import SocketIO, emit
 from apps.aieditor.func.chain import ScriptAssistant
 from apps.aieditor.func.split_script import ScriptSplitter
 import threading
@@ -12,12 +13,15 @@ from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
 from flask import jsonify, send_from_directory
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 # session 사용을 위해 secret key를 설정
 app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
 
 # openai api key 이건 삭제하고 업로드
 api_key = ""
+
+video_generation_complete = False
 
 imgPath = os.path.join("static", "image")
 app.config["IMAGE_FOLDER"] = imgPath
@@ -27,56 +31,7 @@ subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
 total_image_count = 0
-
-
-@app.route("/merge", methods=["GET", "POST"])
-def merge():
-    # message = ""
-    global api_key
-    maintheme = "폼페이의 마지막 날"
-    scripts = [
-        "베수비오 화산이 폭발하던 그 순간, 폼페이는 어땠을까요? \
-                오늘 우리는 그 끔찍한 순간을 들여다봅니다. \
-                화산재와 용암으로 하늘이 뒤덮였고, 폼페이 사람들은 어떻게 반응했을까요? \
-                자, 이제 그들의 용기와 우리에게 전하는 메시지, 자연재해 앞에서 우리의 대처 방법을 함께 탐색해봅시다."
-    ]
-    splits = ScriptSplitter()
-
-    if request.method == "POST":
-        print("request : ", request)
-        print("request.form :", request.form)
-
-        # 스크립트 나눠서 리스트에 담기
-        split_text = splits.split_script2sentences(scripts)
-        print(split_text)
-
-        # 이미지 생성용 프롬프트 만들기
-        prompts = img_gan_prompt(maintheme, split_text)
-        print(prompts)
-
-        # 더빙 음성 만들기
-        voice_gan_wavenet(split_text)
-
-        # 이미지 생성
-        img_gan_dalle3(api_key, prompts)
-
-        # def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
-        image_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-        )
-        audio_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
-        )
-        clip_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
-        )
-        output_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
-        )
-
-        add_static_image_to_video(image_path, audio_path, clip_path, output_path)
-
-    return render_template("merge.html")  # , message=message)
+background_music_option = "no"
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -102,7 +57,7 @@ def main():
             user_input = request.form.get("user_input")
             selected_model = request.form.get("modelSelect")
 
-            # "주제" 버튼이 눌린 경우
+            # "주제 생성" 버튼이 눌린 경우
             if "main-button" in request.form:
                 # 영상 주제 / 모델이 없다면 입력 혹은 선택하라고 사용자에게 피드백 flash
                 if not user_input or not selected_model:
@@ -121,10 +76,17 @@ def main():
                         )
                         show_subtopic_form = True
 
-                    ############ 주석 작성전
+                    # musicGen 인스턴스가 생성되어 있는 경우, 병렬로 배경음악 생성 시작
+                    # 배경음악 생성에 시간이 걸려서, "주제 생성" 버튼이 눌렸을 때 생성하기 시작함
                     if music_gen_instance:
+                        user_input_en = script_assistant_instance.translate2en(
+                            user_input
+                        )
+                        session["user_input_en"] = user_input_en
+
+                        print("===== BGM 생성을 시작합니다. =====")
                         bgm_thread = threading.Thread(
-                            target=music_gen_instance.make_bgm, args=(user_input,)
+                            target=music_gen_instance.make_bgm, args=(user_input_en,)
                         )
                         bgm_thread.start()
 
@@ -143,7 +105,6 @@ def main():
                         subtopics = script_assistant_instance.make_subtopics(
                             user_input, selected_maintopic
                         )
-                        print(subtopics)
 
                         # session에 데이터 저장
                         session["user_input"] = user_input
@@ -165,8 +126,11 @@ def main():
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
+    global background_music_option
+
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
+    user_input_en = session.get("user_input_en", "")
     selected_model = session.get("selected_model", "")
     selected_maintopic = session.get("selected_maintopic", "")
     subtopics = session.get("subtopics", "")
@@ -180,23 +144,26 @@ def script():
         print("request:", request)
         print("request.form:", request.form)
 
+        # 배경음악을 선택한 경우
+        if "backgroundmusic" in request.json:
+            background_music_option = request.json["backgroundmusic"]
+            print("BGM 선택!!!", background_music_option)
+
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
-        if not (request.form) and request.json.get("script_button"):
+        elif "script_button" in request.json:
             print("request.json:", request.json)
 
             # checkedNames : 선택된 체크박스의 name(subtopic{i})들을 리스트로 반환(script.js의 getCheckedCheckboxNames 참고)
             checkedNames = request.json["checkedNames"]
-            print(checkedNames)
 
             # ScriptAssistant 인스턴스가 생성되어 있을 경우에만 make_scripts 호출
             if script_assistant_instance:
                 # selected_idx : subtopic{i}의 숫자"i"만 추출
                 selected_idx = list(map(lambda name: int(name[8:]), checkedNames))
-                print(selected_idx)
+                print("선택된 소주제 번호:", selected_idx)
 
                 # selected_list : selected_idx에 해당하는 영어 subtopic
                 selected_list = script_assistant_instance.select_subtopics(selected_idx)
-                print(selected_list)
 
                 # 선택된 소주제에 대한 스크립트 생성
                 def event_stream():
@@ -216,6 +183,7 @@ def script():
                     """
                     try:
                         for i in range(len(checkedNames)):
+                            print(f"===== {i+1}번째 스크립트를 작성합니다. =====")
                             for chunk in script_assistant_instance.make_scripts(
                                 selected_maintopic, selected_list, str(i + 1)
                             ):
@@ -225,6 +193,7 @@ def script():
                                 else:
                                     # Gemini가 empty string을 생성하고 작동을 멈추는 경우가 있기 때문에, 에러를 발생시킴
                                     raise Exception("⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️")
+                            print(f"===== {i+1}번째 스크립트를 작성 완료! =====")
                             yield "End of script"
                         yield "The end"
                     except Exception as e:
@@ -236,12 +205,14 @@ def script():
                 return Response(event_stream(), mimetype="text/event-stream")
 
         # "영상 만들기" 버튼이 눌린 경우
-        elif not (request.form) and request.json.get("video_button"):
+        elif "video_button" in request.json:
             script_data = request.json.get("scriptData")
             session["script_data"] = script_data
 
             # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
             # return redirect(url_for("video"))
+
+    print("BGM 기본값:", background_music_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
@@ -252,7 +223,16 @@ def script():
         selected_model=selected_model,
         selected_maintopic=selected_maintopic,
         subtopics=subtopics,
+        user_input_en=user_input_en,
     )
+
+
+# video 생성 완료 시 socket을 통해 /video에 전달
+@socketio.on("video_generation_complete", namespace="/video")
+def handle_video_generation_complete():
+    print("video_generation_complete 이벤트를 발생시킵니다.")
+    # 클라이언트에게 이벤트를 보냄
+    emit("video_generation_complete", namespace="/video", broadcast=True)
 
 
 # 이미지 확인을 위한 엔드포인트 추가
@@ -291,14 +271,72 @@ def func_images(filename):
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
     print("Reached the /video endpoint.")
-    # script_data = session.get("script_data", "")
-    # # ScriptSplitter 인스턴스 생성 또는 업데이트
-    # script_splitter_instance = ScriptSplitter()
-    # script_list = script_splitter_instance.split_script2sentences(script_data)
-    # print(script_list)
+    script_data = session.get("script_data", "")
+    maintheme = session.get("selected_maintopic", "")
 
-    return render_template("video.html")  # , script_list=script_list)
+    # ScriptSplitter 인스턴스 생성 또는 업데이트
+    script_splitter_instance = ScriptSplitter()
+    script_list = script_splitter_instance.split_script2sentences(script_data)
+
+    # 이미지 생성용 프롬프트 만들기
+    prompts = img_gan_prompt(maintheme, script_list)
+    print(prompts)
+
+    # 비디오 생성 쓰레드 만들기
+    def start_video_thread():
+        with app.app_context():
+            image_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
+            )
+            audio_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
+            )
+            clip_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
+            )
+            output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+
+            add_static_image_to_video(image_path, audio_path, clip_path, output_path)
+
+    # voice, image를 생성한 후
+    def thread_start():
+        global video_generation_complete
+        with app.app_context():
+            try:
+                voice_gan_wavenet(script_list)
+                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts))
+                # start_image.start()
+                # start_image.join()
+                start_video = threading.Thread(target=start_video_thread)
+                start_video.start()
+                start_video.join()
+
+                video_generation_complete = True
+                socketio.emit("video_generation_complete", namespace="/video")
+
+                # 비디오 생성이 완료되면 download_video로 리다이렉트
+                return redirect(url_for("download_video"))
+            except Exception as e:
+                # 예외가 발생하면 여기에서 처리
+                print(f"Error: {e}")
+
+    # 앞선 함수들 전부 실행하는 스레드 시작
+    thread = threading.Thread(target=thread_start)
+    thread.start()
+
+    # video.html 화면 띄우기
+    return render_template("video.html")
+
+
+@app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
+def download_video():
+    return render_template("download.html", filename="merge_video.mp4")
+
+
+@app.route("/download/<filename>")
+def download(filename):
+    return send_from_directory("static/videos", filename, as_attachment=True)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)

@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>영상 생성기</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/video.css') }}">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     </head>
     <body>
         <header class="main-header">
@@ -29,7 +30,7 @@
         <div class="container">    
             <div class="progress progress-moved">
               <div class="progress-bar" >
-                <div class="progress-text" ></div>
+                <div class="progress-text" id="progress-text"></div>
               </div>                       
             </div> 
         </div>
@@ -40,5 +41,8 @@
         
         <script src="{{ url_for('static', filename='js/video_script.js') }}">
         </script>
+        <!-- HTML 파일의 body 부분 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
     </body>
 </html>

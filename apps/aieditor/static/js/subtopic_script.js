@@ -123,7 +123,7 @@ bgmButton.addEventListener("click", (event) => {
 });
 
 function checkFile() {
-  var user_input = document.getElementById('user_input').innerText;
+  var user_input = document.getElementById('user_input').getAttribute('value');
   var filePath = `static/audio/musicgen_${user_input}.wav`;
   // 파일 존재 여부 확인
   fetch(filePath, { method: 'GET' })
@@ -172,7 +172,29 @@ window.onclick = function(event) {
   }
 };
 
-  
+// bgm 사용할지 말지 flask로 전달
+function useornotBgm(radio) {
+  const selectedValue = radio.value;
+
+  // Send the selected value to the Flask app using fetch
+  fetch("/script", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ backgroundmusic: selectedValue }),
+  })
+  .then(response => {
+      if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      // Handle the response if needed
+  })
+  .catch(error => {
+      console.error("Fetch error:", error);
+      // Handle the error if needed
+  });
+}
 
 //#region 이벤트
 /**

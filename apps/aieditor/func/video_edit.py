@@ -6,6 +6,7 @@ import datetime
 import os
 from moviepy.video.fx.all import *
 
+
 def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
     """_summary_
     같은 이름의 image와 audio 파일을 합쳐서 video로 만드는 함수
@@ -37,7 +38,11 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
         video_clip.write_videofile(clip_path + f"{clip_name}.mp4", fps=24)
 
     # clip_path 폴더에서 파일 목록을 가져옴
-    clips = [file for file in os.listdir(clip_path) if file.endswith(".mp4")]
+    clips = [
+        file
+        for file in os.listdir(clip_path)
+        if file.endswith(".mp4") and not file.startswith("result")
+    ]
 
     # 비디오 클립과 트랜지션 비디오를 저장할 리스트 초기화
     video_clips = []
@@ -47,24 +52,24 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
         # 현재 비디오 클립을 video_clips 리스트에 추가
         video_clips.append(VideoFileClip(clip_path + clips[i]))
 
-        # 트랜지션 결과 파일명 생성
-        transition_output = f"result{i+1}"
+        # # 트랜지션 결과 파일명 생성
+        # transition_output = f"result{i+1}"
 
-        # vid_transition.py 스크립트를 사용하여 트랜지션 비디오 생성
-        # 현재 비디오와 다음 비디오를 입력으로 제공하고, 트랜지션 효과, 프레임 수, 아웃풋 파일명을 지정
-        os.system(
-            f"python {clip_path}vid_transition.py -i {clip_path}{clips[i]} {clip_path}{clips[i+1]} -a translation -n 30 -o {clip_path}{transition_output}.mp4"
-        )
+        # # vid_transition.py 스크립트를 사용하여 트랜지션 비디오 생성
+        # # 현재 비디오와 다음 비디오를 입력으로 제공하고, 트랜지션 효과, 프레임 수, 아웃풋 파일명을 지정
+        # os.system(
+        #     f"python {clip_path}vid_transition.py -i {clip_path}{clips[i]} {clip_path}{clips[i+1]} -a translation -n 30 -o {clip_path}{transition_output}.mp4"
+        # )
 
-        # 생성된 트랜지션 비디오 파일의 경로를 구성
-        phase1_path = clip_path + f"{transition_output}_phase1.mp4"
-        phase2_path = clip_path + f"{transition_output}_phase2.mp4"
+        # # 생성된 트랜지션 비디오 파일의 경로를 구성
+        # phase1_path = clip_path + f"{transition_output}_phase1.mp4"
+        # phase2_path = clip_path + f"{transition_output}_phase2.mp4"
 
-        # 트랜지션 비디오 파일이 존재하는지 확인하고, 존재한다면 video_clips 리스트에 추가
-        if os.path.exists(phase1_path):
-            video_clips.append(VideoFileClip(phase1_path))
-        if os.path.exists(phase2_path):
-            video_clips.append(VideoFileClip(phase2_path))
+        # # 트랜지션 비디오 파일이 존재하는지 확인하고, 존재한다면 video_clips 리스트에 추가
+        # if os.path.exists(phase1_path):
+        #     video_clips.append(VideoFileClip(phase1_path))
+        # if os.path.exists(phase2_path):
+        #     video_clips.append(VideoFileClip(phase2_path))
 
     # 마지막 비디오 클립을 video_clips 리스트에 추가
     video_clips.append(VideoFileClip(clip_path + clips[-1]))
