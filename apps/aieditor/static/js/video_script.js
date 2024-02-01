@@ -1,3 +1,46 @@
+const imageContainer = document.getElementById('image-container');
+let totalImageCount = 0; // 서버에서 받아오는 total_image_count 값으로 갱신될 예정
+
+function checkForNewImage(index) {
+    // 이미지 확인 요청을 서버에 보냅니다.
+    fetch(`/check_image/${index}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.image_exists) {
+                // 서버에서 이미지를 찾았을 때 표시합니다.
+                displayImage(index);
+                totalImageCount = data.total_image_count;
+            } else {
+                // 서버에서 이미지를 찾지 못했을 때, 일정 시간 후에 재시도합니다.
+                setTimeout(() => checkForNewImage(index), 5000);
+            }
+        })
+        .catch(error => {
+            console.error(`Error checking for image ${index}:`, error);
+        });
+}
+
+function displayImage(index) {
+    // 이미지 컨테이너에 새로운 이미지를 추가합니다.
+    const imgElement = document.createElement('img');
+    imgElement.classList.add('generated_image');
+    imgElement.src = `/func_images/${index}.jpg`;
+    imgElement.width = 350;
+    imageContainer.appendChild(imgElement);
+
+    // 모든 이미지가 표시되었다면
+    if (index === totalImageCount) {
+        console.log('All images displayed!');
+    } else {
+        // 다음 이미지 확인을 위해 재귀 호출
+        checkForNewImage(index + 1);
+    }
+}
+
+// 시작은 1번 이미지부터
+checkForNewImage(1);
+
+
 document.addEventListener('DOMContentLoaded', function () {
     // 비동기 작업 시작
     performAsyncTask();

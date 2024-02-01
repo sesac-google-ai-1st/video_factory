@@ -24,6 +24,7 @@ class musicGen:
         inputs = self.processor(
             text=[
                 "A song that uses xylophone, triangle, and guitar with a fairy-tale-like clear feel.",
+                "Determine the major and minor at first and carefully make it so that the melody can be organically connected.",
                 f"The video topic is {user_input_en}",
             ],
             padding=True,
