@@ -1,22 +1,25 @@
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 from flask import request, Response, url_for, redirect, session, flash
+from flask_socketio import SocketIO, emit
 from apps.aieditor.func.chain import ScriptAssistant
 from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
-import os
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
 from apps.aieditor.func.video_edit import add_static_image_to_video
 from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 # session 사용을 위해 secret key를 설정
 app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
 
 # openai api key 이건 삭제하고 업로드
 api_key = ""
+
+video_generation_complete = False
 
 imgPath = os.path.join("static", "image")
 app.config["IMAGE_FOLDER"] = imgPath
@@ -25,56 +28,6 @@ main_topics = []
 subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
-
-
-@app.route("/merge", methods=["GET", "POST"])
-def merge():
-    # message = ""
-    global api_key
-    maintheme = "폼페이의 마지막 날"
-    scripts = [
-        "베수비오 화산이 폭발하던 그 순간, 폼페이는 어땠을까요? \
-                오늘 우리는 그 끔찍한 순간을 들여다봅니다. \
-                화산재와 용암으로 하늘이 뒤덮였고, 폼페이 사람들은 어떻게 반응했을까요? \
-                자, 이제 그들의 용기와 우리에게 전하는 메시지, 자연재해 앞에서 우리의 대처 방법을 함께 탐색해봅시다."
-    ]
-    splits = ScriptSplitter()
-
-    if request.method == "POST":
-        print("request : ", request)
-        print("request.form :", request.form)
-
-        # 스크립트 나눠서 리스트에 담기
-        split_text = splits.split_script2sentences(scripts)
-        print(split_text)
-
-        # 이미지 생성용 프롬프트 만들기
-        prompts = img_gan_prompt(maintheme, split_text)
-        print(prompts)
-
-        # 더빙 음성 만들기
-        voice_gan_wavenet(split_text)
-
-        # 이미지 생성
-        img_gan_dalle3(api_key, prompts)
-
-        # def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
-        image_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-        )
-        audio_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
-        )
-        clip_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
-        )
-        output_path = (
-            "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
-        )
-
-        add_static_image_to_video(image_path, audio_path, clip_path, output_path)
-
-    return render_template("merge.html")  # , message=message)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -253,24 +206,78 @@ def script():
     )
 
 
+@socketio.on("video_generation_complete", namespace="/video")
+def handle_video_generation_complete():
+    print("video_generation_complete 이벤트를 발생시킵니다.")
+    # 클라이언트에게 이벤트를 보냄
+    emit("video_generation_complete", namespace="/video", broadcast=True)
+
+
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
+    maintheme = session.get("selected_maintopic", "")
+
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
     script_list = script_splitter_instance.split_script2sentences(script_data)
-    print(script_list)
 
-    return render_template("video.html", script_list=script_list)
+    # 이미지 생성용 프롬프트 만들기
+    prompts = img_gan_prompt(maintheme, script_list)
+    print(prompts)
 
-@app.route('/download_video')
+    # 비디오 생성 쓰레드 시작
+    def start_video_thread():
+        with app.app_context():
+            image_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
+            )
+            audio_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
+            )
+            clip_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
+            )
+            output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+
+            add_static_image_to_video(image_path, audio_path, clip_path, output_path)
+
+    def thread_start():
+        global video_generation_complete
+        with app.app_context():
+            try:
+                voice_gan_wavenet(script_list)
+                # img_gan_dalle3(api_key, prompts)
+                start_video = threading.Thread(target=start_video_thread)
+                start_video.start()
+                start_video.join()
+
+                video_generation_complete = True
+                socketio.emit("video_generation_complete", namespace="/video")
+
+                # 비디오 생성이 완료되면 merge.html로 리다이렉트
+                return redirect(url_for("download_video"))
+            except Exception as e:
+                # 예외가 발생하면 여기에서 처리
+                print(f"Error: {e}")
+
+    thread = threading.Thread(target=thread_start)
+    thread.start()
+
+    # video.html 화면에서 merge.html 화면으로 리다이렉트
+    return render_template("video.html")
+
+
+@app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
 def download_video():
-    return render_template('download.html', filename='1.mp4')
+    return render_template("download.html", filename="merge_video.mp4")
 
-@app.route('/download/<filename>')
+
+@app.route("/download/<filename>")
 def download(filename):
-    return send_from_directory('static/videos', filename, as_attachment=True)
+    return send_from_directory("static/videos", filename, as_attachment=True)
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)
