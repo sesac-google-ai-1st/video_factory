@@ -17,7 +17,8 @@ from langchain_core.output_parsers import StrOutputParser
 class ScriptAssistant:
     def __init__(self, llm_name):
         # 번역하는 프롬프트
-        self.translate2ko_prompt = "If the text below is in Korean, do nothing. If not, please translate it into Korean. There is no need to add an explanation. \n text: {text}"
+        self.translate2ko_prompt = """If the text below is in Korean, do nothing and return the text as is. 
+        If not, please translate it into Korean. There is no need to add an explanation. \n text: {text}"""
 
         # main topic 생성하는 프롬프트
         # input: youtube topic
@@ -196,6 +197,23 @@ class ScriptAssistant:
             self.generate_script_chain | self.translate_chain | self.output_parser
         )  # stream을 위해 output_parser 추가
 
+    def translate2en(self, text):
+        """BGM 생성에 메인 주제를 영어로 입력하기 위한 번역 함수
+
+        Args:
+            text (str): 사용자가 입력한 주제
+
+        Returns:
+            str: 영어로 번역된 주제
+        """
+        self.translate2en_prompt = ChatPromptTemplate.from_template(
+            "Please translate the text below into English. \n text: {text}"
+        )
+        self.model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
+        self.translate2en_chain = self.translate2en_prompt | self.model
+        self.ko = self.translate2en_chain.invoke({"text": text})
+        return self.ko.content
+
     def make_maintopic(self, user_input):
         """사용자에게 주제를 입력받아, main topic을 생성하는 함수입니다.
 
@@ -208,13 +226,20 @@ class ScriptAssistant:
             list: 한글 main topic 리스트
         """
         self.main_dic = self.maintopic_chain.invoke({"youtube_topic": user_input})
-        print(self.main_dic)
-        self.main_list = []  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
-        for sen in self.main_dic["text"].split("\n"):
+        print("===== 주제 생성이 완료되었습니다! =====\n", self.main_dic)
+        self.main_list = [""] * 10  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
+        self.count = 10
+
+        for sen in self.main_dic["text"].split("\n")[::-1]:
             if "." in sen:
-                self.main_list.append(sen.split(".")[1].strip())
+                self.main_list[self.count - 1] = sen.split(".", 1)[-1].strip()
+                self.count -= 1
             elif sen != "":
-                self.main_list.append(sen)
+                self.main_list[self.count - 1] = sen
+                self.count -= 1
+
+            if self.count == 0:
+                break
         return self.main_list
 
     def make_subtopics(self, user_input, main_topic):
@@ -241,7 +266,7 @@ class ScriptAssistant:
         ]
 
         self.ko_result = self.translate_chain.invoke({"text": "\n".join(self.en_list)})
-
+        print("===== 소주제 생성이 완료되었습니다! =====\n", self.en_result, "\n", self.ko_result)
         self.ko_list = list(
             map(lambda x: x.strip(), self.ko_result.content.split("\n"))
         )
