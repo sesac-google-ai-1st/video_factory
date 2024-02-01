@@ -5,10 +5,11 @@ from apps.aieditor.func.chain import ScriptAssistant
 from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
-import os
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
 from apps.aieditor.func.video_edit import add_static_image_to_video
 from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
+
+from flask import jsonify, send_from_directory
 
 app = Flask(__name__)
 
@@ -25,6 +26,7 @@ main_topics = []
 subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
+total_image_count = 0
 
 
 @app.route("/merge", methods=["GET", "POST"])
@@ -253,16 +255,49 @@ def script():
     )
 
 
+# 이미지 확인을 위한 엔드포인트 추가
+@app.route("/check_image/<int:index>", methods=["GET"])
+def check_image(index):
+    global total_image_count
+    total_image_count = 4
+
+    image_folder_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
+    )
+    image_filename = f"{index}.jpg"
+    image_path = os.path.join(image_folder_path, image_filename)
+
+    # 해당 인덱스의 이미지 파일이 있는지 확인합니다.
+    if os.path.exists(image_path):
+        return jsonify(
+            {"image_exists": True, "total_image_count": total_image_count}
+        )  # 이미지가 있으면 True를 응답합니다.
+    else:
+        return (
+            jsonify({"image_exists": False, "total_image_count": total_image_count}),
+            404,
+        )  # 이미지가 없으면 404 에러와 함께 False를 응답합니다.
+
+
+# 특정 경로에 저장된 이미지 파일을 로드하기 위한 엔드포인트 추가
+@app.route("/func_images/<path:filename>")
+def func_images(filename):
+    image_folder_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
+    )
+    return send_from_directory(image_folder_path, filename)
+
+
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
     print("Reached the /video endpoint.")
-    script_data = session.get("script_data", "")
-    # ScriptSplitter 인스턴스 생성 또는 업데이트
-    script_splitter_instance = ScriptSplitter()
-    script_list = script_splitter_instance.split_script2sentences(script_data)
-    print(script_list)
+    # script_data = session.get("script_data", "")
+    # # ScriptSplitter 인스턴스 생성 또는 업데이트
+    # script_splitter_instance = ScriptSplitter()
+    # script_list = script_splitter_instance.split_script2sentences(script_data)
+    # print(script_list)
 
-    return render_template("video.html", script_list=script_list)
+    return render_template("video.html")  # , script_list=script_list)
 
 
 if __name__ == "__main__":

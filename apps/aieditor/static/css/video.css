@@ -140,4 +140,19 @@ $red: #ff2d55;
     linear-gradient(to right, $purple, $red, $green, $turquoise, $blue, $light-blue);
   }
 }
-  
+
+#image-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start; /* Align items to the start (top) */
+  padding: 0 3%; /* 3% padding on both left and right */
+  overflow-y: auto; /* Enable vertical scrolling when content overflows */
+  max-height: 100vh; /* Set a maximum height equal to the viewport height */
+
+}
+
+.generated_image {
+  margin: 5px; 
+  max-width: 100%;
+}
