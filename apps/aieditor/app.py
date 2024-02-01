@@ -31,7 +31,7 @@ subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
 total_image_count = 0
-background_music_option = "no"
+bgm_option = "no"
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -126,7 +126,7 @@ def main():
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
-    global background_music_option
+    global bgm_option
 
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
@@ -146,8 +146,8 @@ def script():
 
         # 배경음악을 선택한 경우
         if "backgroundmusic" in request.json:
-            background_music_option = request.json["backgroundmusic"]
-            print("BGM 선택!!!", background_music_option)
+            bgm_option = request.json["backgroundmusic"]
+            print("BGM 선택!!!", bgm_option)
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
         elif "script_button" in request.json:
@@ -212,7 +212,7 @@ def script():
             # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
             # return redirect(url_for("video"))
 
-    print("BGM 기본값:", background_music_option)
+    print("BGM 기본값:", bgm_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
@@ -225,14 +225,6 @@ def script():
         subtopics=subtopics,
         user_input_en=user_input_en,
     )
-
-
-# video 생성 완료 시 socket을 통해 /video에 전달
-@socketio.on("video_generation_complete", namespace="/video")
-def handle_video_generation_complete():
-    print("video_generation_complete 이벤트를 발생시킵니다.")
-    # 클라이언트에게 이벤트를 보냄
-    emit("video_generation_complete", namespace="/video", broadcast=True)
 
 
 # 이미지 확인을 위한 엔드포인트 추가
@@ -266,6 +258,14 @@ def func_images(filename):
         "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
     )
     return send_from_directory(image_folder_path, filename)
+
+
+# video 생성 완료 시 socket을 통해 /video에 전달
+@socketio.on("video_generation_complete", namespace="/video")
+def handle_video_generation_complete():
+    print("video_generation_complete 이벤트를 발생시킵니다.")
+    # 클라이언트에게 이벤트를 보냄
+    emit("video_generation_complete", namespace="/video", broadcast=True)
 
 
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
@@ -335,7 +335,10 @@ def download_video():
 
 @app.route("/download/<filename>")
 def download(filename):
-    return send_from_directory("static/videos", filename, as_attachment=True)
+    finalclip_folder_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+    )
+    return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
 
 
 if __name__ == "__main__":
