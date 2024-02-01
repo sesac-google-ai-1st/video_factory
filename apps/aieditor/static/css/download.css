@@ -1,28 +1,35 @@
+/* Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Dongle:wght@700&family=Gowun+Dodum&display=swap');
+
+/* Global Styles */
+* {
+  font-family: 'Gowun Dodum';
+}
+
 /* styles.css */
 body {
     margin: 0;
-    padding: 0;
     background-color: white;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    overflow: hidden;
+    overflow: auto;
 }
 
 .content {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    /* align-items: center; */
     position: relative; /* 상대적 위치 지정 */
 }
 
-.tv-box {
+/* .tv-box {
     background-color: black;
     padding: 20px;
     border-radius: 20px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-}
+} */
 
 .video-container {
     background-color: black;
@@ -41,7 +48,7 @@ video {
     right: 0px; /* 우측 정렬 */
     bottom: -50px; /* 비디오 아래로 위치 조정 */
     padding: 10px 20px;
-    background-color: #007bff;
+    background-color: #3baaff;
     color: white;
     text-decoration: none;
     border: none;
@@ -49,3 +56,6 @@ video {
     font-size: 16px;
     cursor: pointer;
 }
+.download-button:hover {
+    background-color: #334063;
+  }
