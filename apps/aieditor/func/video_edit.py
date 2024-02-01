@@ -169,15 +169,15 @@ def backgroundmusic(video_path, bgm_path):
     """_summary_
     배경음악 추가하는 함수 생성하기
     Args:
-        video_path (str): video 파일의 절대경로를 포함하여 파일 지정
+        video_path (str): video 파일의 절대경로
         bgm_path (str): audio 파일의 절대경로를 포함하여 파일 지정
     """
 
     # input으로 입력받은 경로를 통해 각각 video, audio 파일로 불러옵니다.
-    videoclip = VideoFileClip(video_path)
+    videoclip = VideoFileClip(video_path + "merge_video.mp4")
     audio = AudioFileClip(bgm_path)
     # 배경 음악이 될 audio의 볼륨을 조절합니다.
-    audio = audio.volumex(0.3)
+    audio = audio.volumex(0.2)
 
     # 약 30초의 배경 음악을 영상이 끝날 때까지 재생할 수 있도록 loop를 만듭니다.
     loopclip = afx.audio_loop(audio, duration=videoclip.duration)
@@ -186,7 +186,7 @@ def backgroundmusic(video_path, bgm_path):
     newclip = CompositeAudioClip([videoclip.audio, loopclip])
     videoclip.audio = newclip
 
-    videoclip.write_videofile("final_video.mp4")
+    videoclip.write_videofile(video_path + "final_video.mp4")
 
 
 # add_static_image_to_video(img, audio, test)

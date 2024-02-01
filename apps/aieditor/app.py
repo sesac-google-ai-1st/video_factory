@@ -7,7 +7,7 @@ from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
-from apps.aieditor.func.video_edit import add_static_image_to_video
+from apps.aieditor.func.video_edit import add_static_image_to_video, backgroundmusic
 from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
 
 from flask import jsonify, send_from_directory
@@ -273,6 +273,7 @@ def video():
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
     maintheme = session.get("selected_maintopic", "")
+    bgm_name = session.get("user_input_en", "")
 
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
@@ -298,9 +299,16 @@ def video():
 
             add_static_image_to_video(image_path, audio_path, clip_path, output_path)
 
+    def bgm_thread():
+        with app.app_context():
+            video_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+            bgm_path = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
+            backgroundmusic(video_path, bgm_path)
+
     # voice, image를 생성한 후
     def thread_start():
         global video_generation_complete
+        global bgm_option
         with app.app_context():
             try:
                 voice_gan_wavenet(script_list)
@@ -310,6 +318,11 @@ def video():
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
+
+                if bgm_option == "yes":
+                    start_bgm = threading.Thread(target=bgm_thread)
+                    start_bgm.start()
+                    start_bgm.join()
 
                 video_generation_complete = True
                 socketio.emit("video_generation_complete", namespace="/video")
@@ -330,7 +343,7 @@ def video():
 
 @app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
 def download_video():
-    return render_template("download.html", filename="merge_video.mp4")
+    return render_template("download.html", filename="final_video.mp4")
 
 
 @app.route("/download/<filename>")
