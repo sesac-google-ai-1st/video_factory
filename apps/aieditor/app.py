@@ -264,6 +264,13 @@ def video():
 
     return render_template("video.html", script_list=script_list)
 
+@app.route('/download_video')
+def download_video():
+    return render_template('download.html', filename='1.mp4')
+
+@app.route('/download/<filename>')
+def download(filename):
+    return send_from_directory('static/videos', filename, as_attachment=True)
 
 if __name__ == "__main__":
     app.run(debug=True)
