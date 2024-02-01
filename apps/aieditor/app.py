@@ -10,6 +10,8 @@ from apps.aieditor.func.tts_gan import voice_gan_wavenet
 from apps.aieditor.func.video_edit import add_static_image_to_video
 from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
 
+from flask import jsonify, send_from_directory
+
 app = Flask(__name__)
 socketio = SocketIO(app)
 
@@ -28,7 +30,8 @@ main_topics = []
 subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
-background_music_option = "no"
+total_image_count = 0
+bgm_option = "no"
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -123,7 +126,7 @@ def main():
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
-    global background_music_option
+    global bgm_option
 
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
@@ -143,8 +146,8 @@ def script():
 
         # 배경음악을 선택한 경우
         if "backgroundmusic" in request.json:
-            background_music_option = request.json["backgroundmusic"]
-            print("BGM 선택!!!", background_music_option)
+            bgm_option = request.json["backgroundmusic"]
+            print("BGM 선택!!!", bgm_option)
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
         elif "script_button" in request.json:
@@ -209,7 +212,7 @@ def script():
             # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
             # return redirect(url_for("video"))
 
-    print("BGM 기본값:", background_music_option)
+    print("BGM 기본값:", bgm_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
@@ -222,6 +225,39 @@ def script():
         subtopics=subtopics,
         user_input_en=user_input_en,
     )
+
+
+# 이미지 확인을 위한 엔드포인트 추가
+@app.route("/check_image/<int:index>", methods=["GET"])
+def check_image(index):
+    global total_image_count
+    total_image_count = 4
+
+    image_folder_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
+    )
+    image_filename = f"{index}.jpg"
+    image_path = os.path.join(image_folder_path, image_filename)
+
+    # 해당 인덱스의 이미지 파일이 있는지 확인합니다.
+    if os.path.exists(image_path):
+        return jsonify(
+            {"image_exists": True, "total_image_count": total_image_count}
+        )  # 이미지가 있으면 True를 응답합니다.
+    else:
+        return (
+            jsonify({"image_exists": False, "total_image_count": total_image_count}),
+            404,
+        )  # 이미지가 없으면 404 에러와 함께 False를 응답합니다.
+
+
+# 특정 경로에 저장된 이미지 파일을 로드하기 위한 엔드포인트 추가
+@app.route("/func_images/<path:filename>")
+def func_images(filename):
+    image_folder_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
+    )
+    return send_from_directory(image_folder_path, filename)
 
 
 # video 생성 완료 시 socket을 통해 /video에 전달
@@ -299,7 +335,10 @@ def download_video():
 
 @app.route("/download/<filename>")
 def download(filename):
-    return send_from_directory("static/videos", filename, as_attachment=True)
+    finalclip_folder_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+    )
+    return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
 
 
 if __name__ == "__main__":
