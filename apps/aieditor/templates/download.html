@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Player</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/download.css') }}">
+</head>
+<body>
+    <div class="content">
+        <div class="video-container">
+            <video controls>
+                <source src="{{ url_for('static', filename='videos/' + filename) }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <a href="{{ url_for('download', filename=filename) }}" class="download-button">다운로드</a>
+    </div>
+</body>
+</html>

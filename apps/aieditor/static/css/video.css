@@ -28,45 +28,57 @@ body {
 .main-header h1 {
   color: #ffffff;
   margin: 0;
-  font-size: 20px;
+  font-size: 30px;
 }
 
 .loading span {
   display: inline-block;
-  margin: 0 -.075em;
+  margin: 0 -.05em;
   animation: loading .9s infinite alternate;
+  font-size: x-large;
 }
 .loading span:nth-child(2) {
+  font-size: x-large;
   animation-delay: .1s;
 }
 .loading span:nth-child(3) {
+  font-size: x-large;
   animation-delay: .2s;
 }
 .loading span:nth-child(4) {
+  font-size: x-large;
   animation-delay: .3s;
 }
 .loading span:nth-child(5) {
+  font-size: x-large;
   animation-delay: .4s;
 }
 .loading span:nth-child(6) {
+  font-size: x-large;
   animation-delay: .5s;
 }
 .loading span:nth-child(7) {
+  font-size: x-large;
   animation-delay: .6s;
 }
 .loading span:nth-child(8) {
+  font-size: x-large;
   animation-delay: .7s;
 }
 .loading span:nth-child(9) {
+  font-size: x-large;
   animation-delay: .8s;
 }
 .loading span:nth-child(10) {
+  font-size: x-large;
   animation-delay: .9s;
 }
 .loading span:nth-child(11) {
+  font-size: x-large;
   animation-delay: .10s;
 }
 .loading span:nth-child(12) {
+  font-size: x-large;
   animation-delay: .11s;
 }
 

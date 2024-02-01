@@ -21,7 +21,6 @@ body {
 .container {
   max-width: 1000px;
   margin: auto; /* 상하 자동 마진을 사용하여 중앙 정렬 */
-  overflow: auto;
   padding-left: 15%;
 }
 
@@ -75,7 +74,7 @@ body {
 
 input[type="text"] {
   width: 50% ;
-  padding: 20px;
+  padding: 15px;
   margin-bottom: 10px;
   margin: 15px; 
   align-items: center;
