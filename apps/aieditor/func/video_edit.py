@@ -48,7 +48,9 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
     video_clips = []
 
     # clips 리스트의 각 비디오 파일에 대해 반복
-    for i in range(len(clips) - 1):  # 마지막 클립은 다음 클립과 트랜지션할 수 없으므로 len(clips) - 1까지 반복
+    for i in range(
+        len(clips) - 1
+    ):  # 마지막 클립은 다음 클립과 트랜지션할 수 없으므로 len(clips) - 1까지 반복
         # 현재 비디오 클립을 video_clips 리스트에 추가
         video_clips.append(VideoFileClip(clip_path + clips[i]))
 
@@ -101,7 +103,7 @@ def make_subtitle(audio_path, video_path, txt_list):
     hhms = []
 
     # 첫번째 파일은 앞에 transition이 없기 때문에 따로 리스트에 추가합니다.
-    filename = video_path + "1.mp4"
+    filename = video_path + "001.mp4"
     video = VideoFileClip(filename)
     length = video.duration
     second_list.append(length)
@@ -109,7 +111,7 @@ def make_subtitle(audio_path, video_path, txt_list):
     # 비디오 간 transition이 2.5초이기 때문에 자막 텍스트 간에 공백을 둡니다.
     for i in range(len(os.listdir(audio_path)) - 1):
         second_list.append(2.5)
-        filename = video_path + f"{i+2}.mp4"
+        filename = video_path + f"{i+2:0>3}.mp4"
         video = VideoFileClip(filename)
         length = video.duration
         second_list.append(length)

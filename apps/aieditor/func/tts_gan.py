@@ -33,15 +33,15 @@ def voice_gan_wavenet(sentences, progress_callback=None):
         )
 
         # 음성 데이터 저장 (파일명을 i.mp3로 설정)
-        filename = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/{i}.mp3"
+        filename = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/{i:0>3}.mp3"
         with open(filename, "wb") as out:
             out.write(response.audio_content)
             print(f"오디오 파일이 '{filename}'에 저장되었습니다.")
 
         # Update progress after each sentence
         if progress_callback:
-            progress_callback((i / len(sentences)) * 100)
+            progress_callback(round((i / len(sentences)) * 100))
 
-    # Final progress update to indicate completion
+    # Reset progress to 0 after voice generation is complete
     if progress_callback:
-        progress_callback(100)
+        progress_callback(0)

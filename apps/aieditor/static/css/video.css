@@ -90,6 +90,7 @@ body {
     transform: scale(0.8);
   }
 }
+
 .container {
   margin: 100px auto;
   width: 500px;
@@ -108,14 +109,13 @@ body {
   border-radius: 30px;
   background-image: 
     linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
-  transition: 0.4s linear;  
+  transition: 0.2s linear;  
   transition-property: width, background-color;    
 }
 
 .progress-moved .progress-bar {
   width: 100%; 
   background-color: #477cef;  
-  animation: progressAnimation 6s;
 }
 
 @keyframes progressAnimation {

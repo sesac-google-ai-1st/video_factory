@@ -8,7 +8,7 @@ import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
 from apps.aieditor.func.video_edit import add_static_image_to_video, backgroundmusic
-from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
+from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3, img_gen_sdxlturb
 
 from flask import jsonify, send_from_directory
 
@@ -62,7 +62,11 @@ def main():
                 # 영상 주제 / 모델이 없다면 입력 혹은 선택하라고 사용자에게 피드백 flash
                 if not user_input or not selected_model:
                     flash(
-                        "🚨 영상 주제를 입력해주세요❗" if not user_input else "🚨 모델을 선택해주세요❗",
+                        (
+                            "🚨 영상 주제를 입력해주세요❗"
+                            if not user_input
+                            else "🚨 모델을 선택해주세요❗"
+                        ),
                         "error",
                     )
                 else:
@@ -192,7 +196,9 @@ def script():
                                     yield chunk
                                 else:
                                     # Gemini가 empty string을 생성하고 작동을 멈추는 경우가 있기 때문에, 에러를 발생시킴
-                                    raise Exception("⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️")
+                                    raise Exception(
+                                        "⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️"
+                                    )
                             print(f"===== {i+1}번째 스크립트를 작성 완료! =====")
                             yield "End of script"
                         yield "The end"
@@ -235,7 +241,7 @@ def check_image(index):
     image_folder_path = (
         "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
     )
-    image_filename = f"{index}.jpg"
+    image_filename = f"{index:0>3}.jpg"
     image_path = os.path.join(image_folder_path, image_filename)
 
     # 해당 인덱스의 이미지 파일이 있는지 확인합니다.
@@ -284,6 +290,8 @@ def video():
     # 이미지 생성용 프롬프트 만들기
     prompts = img_gan_prompt(maintheme, script_list)
     print(prompts)
+    prompts_en = [script_assistant_instance.translate2en(p) for p in prompts]
+    print(prompts_en)
 
     # 비디오 생성 쓰레드 만들기
     def start_video_thread():
@@ -322,9 +330,12 @@ def video():
 
                 voice_gan_wavenet(script_list, progress_callback=progress_callback)
 
-                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts))
-                # start_image.start()
-                # start_image.join()
+                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts, progress_callback))
+                start_image = threading.Thread(
+                    target=img_gen_sdxlturb, args=(prompts_en, progress_callback)
+                )
+                start_image.start()
+                start_image.join()
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
@@ -353,7 +364,7 @@ def video():
 
 @app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
 def download_video():
-    return render_template("download.html", filename="final_video.mp4")
+    return render_template("download.html", filename="merge_video.mp4")
 
 
 @app.route("/download/<filename>")
