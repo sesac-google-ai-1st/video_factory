@@ -33,21 +33,14 @@
             </div>
             <div id="progress-text" class="progress-text">0%</div>
         </div>
-              <div class="progress-bar" >
-                <div class="progress-text" id="progress-text"></div>
-              </div>                       
-            </div> 
-        </div>
 
         <div id="image-container">
             <!-- generated_image가 표시되는 영역입니다. -->
         </div>
         
-        <script src="{{ url_for('static', filename='js/video_script.js') }}">
-        </script>
-        <!-- HTML 파일의 body 부분 -->
+        <script src="{{ url_for('static', filename='js/video_script.js') }}"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-        <script>
+        <!-- <script>
             // 서버에서 SSE로 이미지 생성 진행 상태를 받아옴
             const eventSource = new EventSource('/sse');
             
@@ -70,6 +63,6 @@
                     document.getElementById('progress-bar-container').style.display = 'none';
                 }
             }
-        </script>
+        </script> -->
     </body>
 </html>

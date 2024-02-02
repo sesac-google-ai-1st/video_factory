@@ -313,7 +313,15 @@ def video():
         global bgm_option
         with app.app_context():
             try:
-                voice_gan_wavenet(script_list)
+
+                def progress_callback(progress):
+                    print(progress)
+                    socketio.emit(
+                        "progress_update", {"progress": progress}, namespace="/video"
+                    )
+
+                voice_gan_wavenet(script_list, progress_callback=progress_callback)
+
                 # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts))
                 # start_image.start()
                 # start_image.join()
