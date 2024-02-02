@@ -307,7 +307,19 @@ def video():
             )
             output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
 
-            add_static_image_to_video(image_path, audio_path, clip_path, output_path)
+            def progress_callback(progress):
+                print(progress)
+                socketio.emit(
+                    "progress_update", {"progress": progress}, namespace="/video"
+                )
+
+            add_static_image_to_video(
+                image_path,
+                audio_path,
+                clip_path,
+                output_path,
+                progress_callback=progress_callback,
+            )
 
     def bgm_thread():
         with app.app_context():

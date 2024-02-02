@@ -119,8 +119,8 @@ body {
 }
 
 @keyframes progressAnimation {
-  0%   { width: 5%; background-color: #bce6f9;}
-  100% { width: 98%; background-color: #4782ef; }
+  0%   { width: 0%; background-color: #bce6f9;}
+  100% { width: 100%; background-color: #4782ef; }
 }
 
 $green: #4cd964;

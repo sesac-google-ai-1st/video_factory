@@ -7,7 +7,9 @@ import os
 from moviepy.video.fx.all import *
 
 
-def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
+def add_static_image_to_video(
+    image_path, audio_path, clip_path, output_path, progress_callback=None
+):
     """_summary_
     같은 이름의 image와 audio 파일을 합쳐서 video로 만드는 함수
     image path와 audio path, output path를 인수로 주면 이미지 폴더와 오디오폴더 속 파일을 합쳐 output 폴더로 동영상울 출력합니다. 영상간의 transition은 따로 출력되어 output 파일에 저장됩니다.
@@ -23,7 +25,7 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
     clips = []
     video_clips = []
 
-    for image_file, audio_file in zip(image_files, audio_files):
+    for i, (image_file, audio_file) in enumerate(zip(image_files, audio_files)):
         # 오디오 파일 로드
         audio_clip = AudioFileClip(audio_path + audio_file)
 
@@ -37,6 +39,9 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
         clip_name = os.path.splitext(image_file)[0]
         video_clip.write_videofile(clip_path + f"{clip_name}.mp4", fps=24)
 
+        if progress_callback:
+            progress_callback(round(((i + 1) / len(audio_files)) * 100))
+
     # clip_path 폴더에서 파일 목록을 가져옴
     clips = [
         file
@@ -48,9 +53,8 @@ def add_static_image_to_video(image_path, audio_path, clip_path, output_path):
     video_clips = []
 
     # clips 리스트의 각 비디오 파일에 대해 반복
-    for i in range(
-        len(clips) - 1
-    ):  # 마지막 클립은 다음 클립과 트랜지션할 수 없으므로 len(clips) - 1까지 반복
+    for i in range(len(clips) - 1):
+        # 마지막 클립은 다음 클립과 트랜지션할 수 없으므로 len(clips) - 1까지 반복
         # 현재 비디오 클립을 video_clips 리스트에 추가
         video_clips.append(VideoFileClip(clip_path + clips[i]))
 
@@ -188,7 +192,7 @@ def backgroundmusic(video_path, bgm_path):
     newclip = CompositeAudioClip([videoclip.audio, loopclip])
     videoclip.audio = newclip
 
-    videoclip.write_videofile(video_path + "final_video.mp4")
+    videoclip.write_videofile(video_path + "merge_video.mp4")
 
 
 # add_static_image_to_video(img, audio, test)

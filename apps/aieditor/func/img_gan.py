@@ -73,8 +73,8 @@ def img_gen_sdxlturb(prompts, progress_callback=None):
     # 파이프 라인 만들기(sdxl turbo 모델 가져오기)
     pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo")
 
-    width = 1024
-    height = 768
+    width = 1280
+    height = 720
 
     # 이미지 생성(프롬프트 입력, 추론 스텝 1, 프롬프트 충실도 0)
     for idx, prompt in enumerate(prompts):
