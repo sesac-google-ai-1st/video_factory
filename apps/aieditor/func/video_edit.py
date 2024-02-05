@@ -114,26 +114,33 @@ def make_subtitle(audio_path, video_path, txt_list):
         video_path (str): video 파일이 들어있는 폴더를 지정합니다.
         txt_list (list): 자막에 들어갈 텍스트를 리스트 형태로 받습니다.
     """
-    srt = open("./srt/sample.srt", "w+")
+    srt = open("apps/aieditor/func/sample.srt", "w+", encoding="utf-8")
 
     # empty list 생성
     second_list = []
     hhms = []
 
     # 첫번째 파일은 앞에 transition이 없기 때문에 따로 리스트에 추가합니다.
-    filename = video_path + "001.mp4"
-    video = VideoFileClip(filename)
-    length = video.duration
-    second_list.append(length)
+    # filename = video_path + "001.mp4"
+    # video = VideoFileClip(filename)
+    # length = video.duration
+    # second_list.append(length)
 
     # 비디오 간 transition이 2.5초이기 때문에 자막 텍스트 간에 공백을 둡니다.
-    for i in range(len(os.listdir(audio_path)) - 1):
-        second_list.append(2.5)
-        filename = video_path + f"{i+2:0>3}.mp4"
+    for i in range(len(os.listdir(audio_path))):
+        filename = video_path + f"{i+1:0>3}.mp4"
         video = VideoFileClip(filename)
         length = video.duration
         second_list.append(length)
+
+        if any(
+            os.path.exists(os.path.join(video_path, file))
+            for file in os.listdir(video_path)
+            if file.startswith(f"result{i+1}")
+        ):
+            second_list.append(2.5)
     second = second_list
+    print(second_list)
 
     # second_list에 기록되어있는 초들끼리 더하여 타임라인 리스트를 만듭니다.
     for i in range(len(second_list)):
@@ -150,8 +157,15 @@ def make_subtitle(audio_path, video_path, txt_list):
     print(hhms)
 
     # 처리한 리스트로 srt 파일을 작성합니다.
-    for i in range(len(hhms) // 2):
-        srt.write(f"%d\n{hhms[2*i]} --> {hhms[2*i+1]}\n{txt_list[i]}\n\n" % (i + 1))
+    if any(
+        os.path.exists(os.path.join(video_path, file))
+        for file in os.listdir(video_path)
+        if file.startswith(f"result{i+1}")
+    ):
+        for i in range((len(hhms) // 2)):
+            srt.write(f"%d\n{hhms[2*i]} --> {hhms[2*i+1]}\n{txt_list[i]}\n\n" % (i + 1))
+    for i in range(len(hhms) - 1):
+        srt.write(f"%d\n{hhms[i]} --> {hhms[i+1]}\n{txt_list[i]}\n\n" % (i + 1))
 
 
 def subtitles(video_file, subtitle_file, output_path):
