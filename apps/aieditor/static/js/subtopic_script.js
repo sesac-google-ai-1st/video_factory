@@ -271,7 +271,7 @@ scriptform.addEventListener("submit", async (event) => {
         currentTextarea = createTextarea(checkedNames, currentTextareaIndex);   // 다음 주제에 관한 스크립트를 넣을 textarea 생성
         chunks = "";  // Reset chunks for the new textarea
       } else {
-        currentTextarea.value = chunks;
+        currentTextarea.value = chunks + "●";
       }
     };
   } catch (error) {
