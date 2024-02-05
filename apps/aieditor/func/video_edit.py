@@ -25,6 +25,10 @@ def add_static_image_to_video(
     clips = []
     video_clips = []
 
+    # Generation start
+    if progress_callback:
+        progress_callback("비디오 생성 중", 0)
+
     for i, (image_file, audio_file) in enumerate(zip(image_files, audio_files)):
         # 오디오 파일 로드
         audio_clip = AudioFileClip(audio_path + audio_file)
@@ -40,7 +44,9 @@ def add_static_image_to_video(
         video_clip.write_videofile(clip_path + f"{clip_name}.mp4", fps=24)
 
         if progress_callback:
-            progress_callback(round(((i + 1) / len(audio_files)) * 100))
+            progress_callback(
+                "비디오 생성 중", round(((i + 1) / len(audio_files)) * 50)
+            )
 
     # clip_path 폴더에서 파일 목록을 가져옴
     clips = [
@@ -57,6 +63,11 @@ def add_static_image_to_video(
         # 마지막 클립은 다음 클립과 트랜지션할 수 없으므로 len(clips) - 1까지 반복
         # 현재 비디오 클립을 video_clips 리스트에 추가
         video_clips.append(VideoFileClip(clip_path + clips[i]))
+
+        if progress_callback:
+            progress_callback(
+                "비디오 합치는 중", round(((i + 1) / len(audio_files)) * 50) + 50
+            )
 
         # # 트랜지션 결과 파일명 생성
         # transition_output = f"result{i+1}"
@@ -76,6 +87,9 @@ def add_static_image_to_video(
         #     video_clips.append(VideoFileClip(phase1_path))
         # if os.path.exists(phase2_path):
         #     video_clips.append(VideoFileClip(phase2_path))
+
+    if progress_callback:
+        progress_callback("비디오 생성 완료", 100)
 
     # 마지막 비디오 클립을 video_clips 리스트에 추가
     video_clips.append(VideoFileClip(clip_path + clips[-1]))

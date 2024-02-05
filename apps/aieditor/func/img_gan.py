@@ -61,11 +61,11 @@ def img_gan_dalle3(api_key, prompts, progress_callback=None):
 
         # Emit progress update to the client
         if progress_callback:
-            progress_callback(round(((idx + 1) / len(prompts)) * 100))
+            progress_callback("이미지 생성 중", round(((idx + 1) / len(prompts)) * 100))
 
-    # Reset progress to 0 after voice generation is complete
+    # Generation is complete
     if progress_callback:
-        progress_callback(0)
+        progress_callback("이미지 생성 완료", 100)
 
 
 # sdxl turbo로 이미지 생성하는 함수
@@ -73,8 +73,12 @@ def img_gen_sdxlturb(prompts, progress_callback=None):
     # 파이프 라인 만들기(sdxl turbo 모델 가져오기)
     pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo")
 
-    width = 1280
-    height = 720
+    width = 1280 // 2
+    height = 720 // 2
+
+    # Generation start
+    if progress_callback:
+        progress_callback("이미지 생성 중", 0)
 
     # 이미지 생성(프롬프트 입력, 추론 스텝 1, 프롬프트 충실도 0)
     for idx, prompt in enumerate(prompts):
@@ -98,8 +102,8 @@ def img_gen_sdxlturb(prompts, progress_callback=None):
 
         # Emit progress update to the client
         if progress_callback:
-            progress_callback(round(((idx + 1) / len(prompts)) * 100))
+            progress_callback("이미지 생성 중", round(((idx + 1) / len(prompts)) * 100))
 
-    # Reset progress to 0 after voice generation is complete
+    # Generation is complete
     if progress_callback:
-        progress_callback(0)
+        progress_callback("이미지 생성 완료", 100)

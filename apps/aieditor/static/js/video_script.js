@@ -46,9 +46,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     socket.on('progress_update', function (msg) {
         var progressBar = document.getElementById('progress-bar');
+        var progressDesc = document.getElementById('progress-description');
         var progressText = document.getElementById('progress-text');
+        var progressStep = document.getElementById('progress-step');
         progressBar.style.width = msg.progress + '%';
+        progressDesc.innerHTML = msg.description;
         progressText.innerHTML = msg.progress + '%';
+        progressStep.innerHTML = msg.step_now_total;
     });
 });
 

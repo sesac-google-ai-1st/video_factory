@@ -273,6 +273,10 @@ def handle_video_generation_complete():
     emit("video_generation_complete", namespace="/video", broadcast=True)
 
 
+step_now = 1
+step_total = 3
+
+
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
     global total_image_count
@@ -293,8 +297,24 @@ def video():
     prompts_en = [script_assistant_instance.translate2en(p) for p in prompts]
     print(prompts_en)
 
+    def progress_callback(description, progress):
+        global step_now, step_total
+
+        print(description, progress)
+        socketio.emit(
+            "progress_update",
+            {
+                "description": description,
+                "progress": progress,
+                "step_now_total": f"STEP {step_now} / {step_total}",
+            },
+            namespace="/video",
+        )
+
     # 비디오 생성 쓰레드 만들기
     def start_video_thread():
+        global step_now
+
         with app.app_context():
             image_path = (
                 "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
@@ -307,12 +327,6 @@ def video():
             )
             output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
 
-            def progress_callback(progress):
-                print(progress)
-                socketio.emit(
-                    "progress_update", {"progress": progress}, namespace="/video"
-                )
-
             add_static_image_to_video(
                 image_path,
                 audio_path,
@@ -320,6 +334,8 @@ def video():
                 output_path,
                 progress_callback=progress_callback,
             )
+
+        step_now += 1
 
     def bgm_thread():
         with app.app_context():
@@ -330,17 +346,11 @@ def video():
     # voice, image를 생성한 후
     def thread_start():
         global video_generation_complete
-        global bgm_option
+        global bgm_option, step_now
         with app.app_context():
             try:
-
-                def progress_callback(progress):
-                    print(progress)
-                    socketio.emit(
-                        "progress_update", {"progress": progress}, namespace="/video"
-                    )
-
                 voice_gan_wavenet(script_list, progress_callback=progress_callback)
+                step_now += 1
 
                 # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts, progress_callback))
                 start_image = threading.Thread(
@@ -348,6 +358,8 @@ def video():
                 )
                 start_image.start()
                 start_image.join()
+                step_now += 1
+
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
