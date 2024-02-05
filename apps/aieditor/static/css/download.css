@@ -39,8 +39,8 @@ body {
 
 video {
     width: 1080px; /* 원래 너비의 1.5배 */
-    height: 720px; /* 원래 높이의 1.5배 */
-    border-radius: 20px;
+    height: 609px; /* 원래 높이의 1.5배 */
+    /* border-radius: 20px; */
 }
 
 .download-button {
