@@ -1,45 +1,3 @@
-const imageContainer = document.getElementById('image-container');
-let totalImageCount = 0; // 서버에서 받아오는 total_image_count 값으로 갱신될 예정
-
-function checkForNewImage(index) {
-    // 이미지 확인 요청을 서버에 보냅니다.
-    fetch(`/check_image/${index}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.image_exists) {
-                // 서버에서 이미지를 찾았을 때 표시합니다.
-                displayImage(index);
-                totalImageCount = data.total_image_count;
-            } else {
-                // 서버에서 이미지를 찾지 못했을 때, 일정 시간 후에 재시도합니다.
-                setTimeout(() => checkForNewImage(index), 5000);
-            }
-        })
-        .catch(error => {
-            console.error(`Error checking for image ${index}:`, error);
-        });
-}
-
-function displayImage(index) {
-    index_str = String(index).padStart(3, '0');
-    // 이미지 컨테이너에 새로운 이미지를 추가합니다.
-    const imgElement = document.createElement('img');
-    imgElement.classList.add('generated_image');
-    imgElement.src = `/func_images/${index_str}.jpg`;
-    imgElement.width = 350;
-    imageContainer.appendChild(imgElement);
-
-    // 모든 이미지가 표시되었다면
-    if (index === totalImageCount) {
-        console.log('All images displayed!');
-    } else {
-        // 다음 이미지 확인을 위해 재귀 호출
-        checkForNewImage(index + 1);
-    }
-}
-
-// 시작은 1번 이미지부터
-checkForNewImage(1);
 
 document.addEventListener('DOMContentLoaded', function () {
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/video');
@@ -53,6 +11,20 @@ document.addEventListener('DOMContentLoaded', function () {
         progressDesc.innerHTML = msg.description;
         progressText.innerHTML = msg.progress + '%';
         progressStep.innerHTML = msg.step_now_total;
+
+        // 생성된 이미지 URL이 있는지 확인
+        if (msg.image_url) {
+            // 새로운 img 엘리먼트 생성
+            var imgElement = document.createElement('img');
+            imgElement.classList.add('generated_image');
+            imgElement.width = 350;
+            imgElement.src = msg.image_url;
+
+            // img 엘리먼트를 'image-container'에 추가
+            var imageContainer = document.getElementById('image-container');
+            imageContainer.appendChild(imgElement);
+        }
+
     });
 });
 

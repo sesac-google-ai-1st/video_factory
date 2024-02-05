@@ -237,29 +237,6 @@ def script():
     )
 
 
-# 이미지 확인을 위한 엔드포인트 추가
-@app.route("/check_image/<int:index>", methods=["GET"])
-def check_image(index):
-    global total_image_count
-
-    image_folder_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-    )
-    image_filename = f"{index:0>3}.jpg"
-    image_path = os.path.join(image_folder_path, image_filename)
-
-    # 해당 인덱스의 이미지 파일이 있는지 확인합니다.
-    if os.path.exists(image_path):
-        return jsonify(
-            {"image_exists": True, "total_image_count": total_image_count}
-        )  # 이미지가 있으면 True를 응답합니다.
-    else:
-        return (
-            jsonify({"image_exists": False, "total_image_count": total_image_count}),
-            404,
-        )  # 이미지가 없으면 404 에러와 함께 False를 응답합니다.
-
-
 # 특정 경로에 저장된 이미지 파일을 로드하기 위한 엔드포인트 추가
 @app.route("/func_images/<path:filename>")
 def func_images(filename):
@@ -283,7 +260,9 @@ step_total = 3
 
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
-    global total_image_count
+    global total_image_count, step_now
+
+    step_now = 1
 
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
@@ -301,7 +280,7 @@ def video():
     prompts_en = [script_assistant_instance.translate2en(p) for p in prompts]
     print(prompts_en)
 
-    def progress_callback(description, progress):
+    def progress_callback(description, progress, image_url=None):
         global step_now, step_total
 
         print(description, progress)
@@ -311,6 +290,7 @@ def video():
                 "description": description,
                 "progress": progress,
                 "step_now_total": f"STEP {step_now} / {step_total}",
+                "image_url": image_url,
             },
             namespace="/video",
         )

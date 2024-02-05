@@ -17,8 +17,9 @@ from langchain_core.output_parsers import StrOutputParser
 class ScriptAssistant:
     def __init__(self, llm_name):
         # 번역하는 프롬프트
-        self.translate2ko_prompt = """If the text below is in Korean, do nothing and return the text as is. 
-        If not, please translate it into Korean. There is no need to add an explanation. \n text: {text}"""
+        self.translate2ko_prompt = """If the text below is not in Korean, translate it into Korean. There is no need to add an explanation. 
+        \n\n
+        {text}"""
 
         # main topic 생성하는 프롬프트
         # input: youtube topic
@@ -227,10 +228,13 @@ class ScriptAssistant:
         """
         self.main_dic = self.maintopic_chain.invoke({"youtube_topic": user_input})
         print("===== 주제 생성이 완료되었습니다! =====\n", self.main_dic)
-        self.main_list = [""] * 10  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
+        self.main_list = [
+            ""
+        ] * 10  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
         self.count = 10
 
         for sen in self.main_dic["text"].split("\n")[::-1]:
+            sen = sen.strip()
             if "." in sen:
                 self.main_list[self.count - 1] = sen.split(".", 1)[-1].strip()
                 self.count -= 1
@@ -266,7 +270,12 @@ class ScriptAssistant:
         ]
 
         self.ko_result = self.translate_chain.invoke({"text": "\n".join(self.en_list)})
-        print("===== 소주제 생성이 완료되었습니다! =====\n", self.en_result, "\n", self.ko_result)
+        print(
+            "===== 소주제 생성이 완료되었습니다! =====\n",
+            self.en_result,
+            "\n",
+            self.ko_result,
+        )
         self.ko_list = list(
             map(lambda x: x.strip(), self.ko_result.content.split("\n"))
         )

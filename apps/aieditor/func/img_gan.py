@@ -102,7 +102,11 @@ def img_gen_sdxlturb(prompts, progress_callback=None):
 
         # Emit progress update to the client
         if progress_callback:
-            progress_callback("이미지 생성 중", round(((idx + 1) / len(prompts)) * 100))
+            progress_callback(
+                "이미지 생성 중",
+                round(((idx + 1) / len(prompts)) * 100),
+                f"/func_images/{idx+1:0>3}.jpg",
+            )
 
     # Generation is complete
     if progress_callback:
