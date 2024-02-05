@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, send_file
 from flask import request, Response, url_for, redirect, session, flash
 from flask_socketio import SocketIO, emit
 from apps.aieditor.func.chain import ScriptAssistant
@@ -7,7 +7,11 @@ from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
-from apps.aieditor.func.video_edit import add_static_image_to_video, backgroundmusic
+from apps.aieditor.func.video_edit import (
+    add_static_image_to_video,
+    backgroundmusic,
+    make_subtitle,
+)
 from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3, img_gen_sdxlturb
 
 from flask import jsonify, send_from_directory
@@ -343,6 +347,17 @@ def video():
             bgm_path = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
             backgroundmusic(video_path, bgm_path)
 
+    def subtitle_thread():
+        with app.app_context():
+            audio_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
+            )
+            clip_path = (
+                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
+            )
+
+            make_subtitle(audio_path, clip_path, script_list)
+
     # voice, image를 생성한 후
     def thread_start():
         global video_generation_complete
@@ -363,6 +378,10 @@ def video():
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
+
+                start_subtitle = threading.Thread(target=subtitle_thread)
+                start_subtitle.start()
+                start_subtitle.join()
 
                 if bgm_option == "yes":
                     start_bgm = threading.Thread(target=bgm_thread)
@@ -388,7 +407,9 @@ def video():
 
 @app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
 def download_video():
-    return render_template("download.html", filename="merge_video.mp4")
+    return render_template(
+        "download.html", filename="merge_video.mp4", subtitle="sample.srt"
+    )
 
 
 @app.route("/download/<filename>")
@@ -397,6 +418,14 @@ def download(filename):
         "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
     )
     return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
+
+
+@app.route("/download_sb", methods=["GET"])
+def download_sb():
+    sb_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/sample.srt"
+    )
+    return send_file(sb_path, as_attachment=True)
 
 
 if __name__ == "__main__":
