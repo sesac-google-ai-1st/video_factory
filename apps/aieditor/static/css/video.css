@@ -90,6 +90,7 @@ body {
     transform: scale(0.8);
   }
 }
+
 .container {
   margin: 100px auto;
   width: 500px;
@@ -108,19 +109,18 @@ body {
   border-radius: 30px;
   background-image: 
     linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
-  transition: 0.4s linear;  
+  transition: 0.2s linear;  
   transition-property: width, background-color;    
 }
 
 .progress-moved .progress-bar {
   width: 100%; 
   background-color: #477cef;  
-  animation: progressAnimation 6s;
 }
 
 @keyframes progressAnimation {
-  0%   { width: 5%; background-color: #bce6f9;}
-  100% { width: 98%; background-color: #4782ef; }
+  0%   { width: 0%; background-color: #bce6f9;}
+  100% { width: 100%; background-color: #4782ef; }
 }
 
 $green: #4cd964;
@@ -156,7 +156,7 @@ $red: #ff2d55;
 #image-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  /* justify-content: center; */
   align-items: flex-start; /* Align items to the start (top) */
   padding: 0 3%; /* 3% padding on both left and right */
   overflow-y: auto; /* Enable vertical scrolling when content overflows */
@@ -167,4 +167,8 @@ $red: #ff2d55;
 .generated_image {
   margin: 5px; 
   max-width: 100%;
+}
+
+#progress-step {
+  float: right;
 }

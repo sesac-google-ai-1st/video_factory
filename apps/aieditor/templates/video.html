@@ -27,49 +27,19 @@
             </div>
         </header>
         
-        <div class="container">    
+        <div class="container">
+            <div id="progress-description" class="progress-text"></div>
             <div class="progress progress-moved">
                 <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0;"></div>
             </div>
-            <div id="progress-text" class="progress-text">0%</div>
-        </div>
-              <div class="progress-bar" >
-                <div class="progress-text" id="progress-text"></div>
-              </div>                       
-            </div> 
+            <div id="progress-text" class="progress-text">0%</div><span id="progress-step">STEP 0 / 3</span>
         </div>
 
         <div id="image-container">
             <!-- generated_image가 표시되는 영역입니다. -->
         </div>
-        
-        <script src="{{ url_for('static', filename='js/video_script.js') }}">
-        </script>
-        <!-- HTML 파일의 body 부분 -->
+        <script src="{{ url_for('static', filename='js/video_script.js') }}"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-        <script>
-            // 서버에서 SSE로 이미지 생성 진행 상태를 받아옴
-            const eventSource = new EventSource('/sse');
-            
-            // 이벤트 핸들러 등록
-            eventSource.onmessage = function (event) {
-                const progress = parseInt(event.data);
-                updateProgressBar(progress);
-            };
-            
-            // 프로그래스바 및 텍스트 업데이트 함수
-            function updateProgressBar(progress) {
-                const progressBar = document.getElementById('progress-bar');
-                const progressText = document.getElementById('progress-text');
-            
-                progressBar.style.width = `${progress}%`;
-                progressText.innerText = `${progress.toFixed(2)}%`;
-            
-                // 이미지 생성이 완료된 경우 프로그래스 바 숨기기
-                if (progress === 100) {
-                    document.getElementById('progress-bar-container').style.display = 'none';
-                }
-            }
-        </script>
-    </body>
+</body>
 </html>
+

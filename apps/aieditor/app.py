@@ -7,8 +7,8 @@ from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
-from apps.aieditor.func.video_edit import add_static_image_to_video
-from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3
+from apps.aieditor.func.video_edit import add_static_image_to_video, backgroundmusic
+from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3, img_gen_sdxlturb
 
 from flask import jsonify, send_from_directory
 
@@ -62,7 +62,11 @@ def main():
                 # 영상 주제 / 모델이 없다면 입력 혹은 선택하라고 사용자에게 피드백 flash
                 if not user_input or not selected_model:
                     flash(
-                        "🚨 영상 주제를 입력해주세요❗" if not user_input else "🚨 모델을 선택해주세요❗",
+                        (
+                            "🚨 영상 주제를 입력해주세요❗"
+                            if not user_input
+                            else "🚨 모델을 선택해주세요❗"
+                        ),
                         "error",
                     )
                 else:
@@ -192,7 +196,9 @@ def script():
                                     yield chunk
                                 else:
                                     # Gemini가 empty string을 생성하고 작동을 멈추는 경우가 있기 때문에, 에러를 발생시킴
-                                    raise Exception("⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️")
+                                    raise Exception(
+                                        "⚠️ 에러가 발생했습니다! 다시 생성해주세요. ⚠️"
+                                    )
                             print(f"===== {i+1}번째 스크립트를 작성 완료! =====")
                             yield "End of script"
                         yield "The end"
@@ -231,12 +237,11 @@ def script():
 @app.route("/check_image/<int:index>", methods=["GET"])
 def check_image(index):
     global total_image_count
-    total_image_count = 4
 
     image_folder_path = (
         "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
     )
-    image_filename = f"{index}.jpg"
+    image_filename = f"{index:0>3}.jpg"
     image_path = os.path.join(image_folder_path, image_filename)
 
     # 해당 인덱스의 이미지 파일이 있는지 확인합니다.
@@ -268,22 +273,48 @@ def handle_video_generation_complete():
     emit("video_generation_complete", namespace="/video", broadcast=True)
 
 
+step_now = 1
+step_total = 3
+
+
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
+    global total_image_count
+
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
     maintheme = session.get("selected_maintopic", "")
+    bgm_name = session.get("user_input_en", "")
 
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
     script_list = script_splitter_instance.split_script2sentences(script_data)
+    total_image_count = len(script_list)  # 총 생성될 이미지 개수 = 문장 개수
 
     # 이미지 생성용 프롬프트 만들기
     prompts = img_gan_prompt(maintheme, script_list)
     print(prompts)
+    prompts_en = [script_assistant_instance.translate2en(p) for p in prompts]
+    print(prompts_en)
+
+    def progress_callback(description, progress):
+        global step_now, step_total
+
+        print(description, progress)
+        socketio.emit(
+            "progress_update",
+            {
+                "description": description,
+                "progress": progress,
+                "step_now_total": f"STEP {step_now} / {step_total}",
+            },
+            namespace="/video",
+        )
 
     # 비디오 생성 쓰레드 만들기
     def start_video_thread():
+        global step_now
+
         with app.app_context():
             image_path = (
                 "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
@@ -296,20 +327,47 @@ def video():
             )
             output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
 
-            add_static_image_to_video(image_path, audio_path, clip_path, output_path)
+            add_static_image_to_video(
+                image_path,
+                audio_path,
+                clip_path,
+                output_path,
+                progress_callback=progress_callback,
+            )
+
+        step_now += 1
+
+    def bgm_thread():
+        with app.app_context():
+            video_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+            bgm_path = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
+            backgroundmusic(video_path, bgm_path)
 
     # voice, image를 생성한 후
     def thread_start():
         global video_generation_complete
+        global bgm_option, step_now
         with app.app_context():
             try:
-                voice_gan_wavenet(script_list)
-                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts))
-                # start_image.start()
-                # start_image.join()
+                voice_gan_wavenet(script_list, progress_callback=progress_callback)
+                step_now += 1
+
+                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts, progress_callback))
+                start_image = threading.Thread(
+                    target=img_gen_sdxlturb, args=(prompts_en, progress_callback)
+                )
+                start_image.start()
+                start_image.join()
+                step_now += 1
+
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
+
+                if bgm_option == "yes":
+                    start_bgm = threading.Thread(target=bgm_thread)
+                    start_bgm.start()
+                    start_bgm.join()
 
                 video_generation_complete = True
                 socketio.emit("video_generation_complete", namespace="/video")
