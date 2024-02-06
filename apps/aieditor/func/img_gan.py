@@ -19,8 +19,8 @@ def pil_draw_label(
     image,
     text,
     font_color=(255, 255, 255),
-    font_size=20,
-    max_line_length=30,
+    font_size=18,
+    max_line_length=32,
     bottom_margin=20,
 ):
     width, height = image.size
@@ -28,15 +28,15 @@ def pil_draw_label(
     if platform.system() == "Darwin":  # 맥
         font = "AppleGothic.ttf"
     elif platform.system() == "Windows":  # 윈도우
-        font = "malgun.ttf"
+        font = "malgunbd.ttf"
     elif platform.system() == "Linux":  # 리눅스 (구글 콜랩)
         """
-        !wget "https://www.wfonts.com/download/data/2016/06/13/malgun-gothic/malgun.ttf"
+        !wget "https://www.wfonts.com/download/data/2016/06/13/malgun-gothic/malgunbd.ttf"
         !mv malgun.ttf /usr/share/fonts/truetype/
         import matplotlib.font_manager as fm
         fm._rebuild()
         """
-        font = "malgun.ttf"
+        font = "malgunbd.ttf"
     try:
         imageFont = ImageFont.truetype(font, font_size)
     except:

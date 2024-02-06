@@ -88,9 +88,6 @@ def add_static_image_to_video(
         # if os.path.exists(phase2_path):
         #     video_clips.append(VideoFileClip(phase2_path))
 
-    if progress_callback:
-        progress_callback("비디오 생성 완료", 100)
-
     # 마지막 비디오 클립을 video_clips 리스트에 추가
     video_clips.append(VideoFileClip(clip_path + clips[-1]))
 
@@ -99,6 +96,9 @@ def add_static_image_to_video(
 
     # 결과 영상 파일 생성
     final_clip.write_videofile(output_path + "merge_video.mp4", fps=24)
+
+    if progress_callback:
+        progress_callback("비디오 생성 완료", 100)
 
 
 # 자막 파일 생성하기
@@ -166,6 +166,8 @@ def make_subtitle(audio_path, video_path, txt_list):
             srt.write(f"%d\n{hhms[2*i]} --> {hhms[2*i+1]}\n{txt_list[i]}\n\n" % (i + 1))
     for i in range(len(hhms) - 1):
         srt.write(f"%d\n{hhms[i]} --> {hhms[i+1]}\n{txt_list[i]}\n\n" % (i + 1))
+
+    print("=====자막 파일 생성 완료=====")
 
 
 def subtitles(video_file, subtitle_file, output_path):
