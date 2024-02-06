@@ -32,14 +32,16 @@
                     <input type="hidden" name="user_input" value="{{ user_input }}">
                     <div class="subtopics-container">
                         {% for i in range(1, 11) %}
-                            <label for="subtopic_check{{i}}">
-                                <div class="subtopic-item">
-                                    <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
-                                    <span class="subtopic-title" id="subtopic{{i}}">{{ subtopics[i-1] }}</span>
-                                    <input type="checkbox" class="subtopic-checkbox" id="subtopic_check{{i}}" name="subtopic{{ i }}"/>
-                                    <label for="subtopic_check{{i}}"></label>
-                                </div>
-                            </label>
+                            {% if subtopics[i-1] %}
+                                <label for="subtopic_check{{i}}">
+                                    <div class="subtopic-item">
+                                        <!-- 이곳에 생성된 subtopic들이 표시됩니다. -->
+                                        <span class="subtopic-title" id="subtopic{{i}}">{{ subtopics[i-1] }}</span>
+                                        <input type="checkbox" class="subtopic-checkbox" id="subtopic_check{{i}}" name="subtopic{{ i }}"/>
+                                        <label for="subtopic_check{{i}}"></label>
+                                    </div>
+                                </label>
+                            {% endif %}
                         {% endfor %}
                     </div>
                     <button class="button" type="submit" name="script-button" id="script-button" onclick="this.classList.toggle('button--loading')">
