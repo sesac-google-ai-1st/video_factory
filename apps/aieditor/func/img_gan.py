@@ -3,7 +3,65 @@ import requests
 
 # diffusers 모델 돌릴때
 from diffusers import AutoPipelineForText2Image
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
+import platform
+import textwrap
+
+
+def textsize(text, font):
+    im = Image.new(mode="P", size=(0, 0))
+    draw = ImageDraw.Draw(im)
+    _, _, width, height = draw.textbbox((0, 0), text=text, font=font)
+    return width, height
+
+
+def pil_draw_label(
+    image,
+    text,
+    font_color=(255, 255, 255),
+    font_size=20,
+    max_line_length=30,
+    bottom_margin=20,
+):
+    width, height = image.size
+    draw = ImageDraw.Draw(image)
+    if platform.system() == "Darwin":  # 맥
+        font = "AppleGothic.ttf"
+    elif platform.system() == "Windows":  # 윈도우
+        font = "malgun.ttf"
+    elif platform.system() == "Linux":  # 리눅스 (구글 콜랩)
+        """
+        !wget "https://www.wfonts.com/download/data/2016/06/13/malgun-gothic/malgun.ttf"
+        !mv malgun.ttf /usr/share/fonts/truetype/
+        import matplotlib.font_manager as fm
+        fm._rebuild()
+        """
+        font = "malgun.ttf"
+    try:
+        imageFont = ImageFont.truetype(font, font_size)
+    except:
+        imageFont = ImageFont.load_default()
+
+    # Wrap the text based on max_line_length
+    wrapped_text = textwrap.fill(text, width=max_line_length)
+
+    # Calculate the total height of the wrapped text
+    total_text_height = 0
+    for line in wrapped_text.split("\n"):
+        line_width, line_height = textsize(line, font=imageFont)
+        total_text_height += line_height
+
+    # Calculate the starting position to center the wrapped text at the bottom
+    x = (width - max_line_length) // 2  # Adjust if needed
+    y = height - total_text_height - bottom_margin  # Added margin
+
+    # Draw each line of the wrapped text
+    for line in wrapped_text.split("\n"):
+        line_width, line_height = textsize(line, font=imageFont)
+        draw.text(((width - line_width) // 2, y), line, font=imageFont, fill=font_color)
+        y += line_height
+
+    return image
 
 
 def img_gan_prompt(maintheme, scripts):
@@ -69,7 +127,7 @@ def img_gan_dalle3(api_key, prompts, progress_callback=None):
 
 
 # sdxl turbo로 이미지 생성하는 함수
-def img_gen_sdxlturb(prompts, progress_callback=None):
+def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
     # 파이프 라인 만들기(sdxl turbo 모델 가져오기)
     pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo")
 
@@ -96,17 +154,38 @@ def img_gen_sdxlturb(prompts, progress_callback=None):
 
         file_path = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/{idx+1:0>3}.jpg"
 
-        # 이미지 저장
-        image.save(file_path)
-        print(f"이미지가 {file_path}에 저장되었습니다.")
+        if not with_sub:  # 자막 없는 이미지
+            # 이미지 저장
+            image.save(file_path)
+            print(f"이미지가 {file_path}에 저장되었습니다.")
 
-        # Emit progress update to the client
-        if progress_callback:
-            progress_callback(
-                "이미지 생성 중",
-                round(((idx + 1) / len(prompts)) * 100),
-                f"/func_images/{idx+1:0>3}.jpg",
-            )
+            # Emit progress update to the client
+            if progress_callback:
+                progress_callback(
+                    "이미지 생성 중",
+                    round(((idx + 1) / len(prompts)) * 100),
+                    f"/func_images/{idx+1:0>3}.jpg",
+                )
+
+        elif with_sub:  # 자막 있는 이미지
+            print("자막 있음")
+            # Emit progress update to the client
+            if progress_callback:
+                print("이미지에 자막 다는 중")
+                sub = script[idx]
+                print(sub)
+                # 자막 추가
+                image = pil_draw_label(image, sub)
+
+                # 결과 이미지 저장
+                image.save(file_path)
+                print(f"이미지가 {file_path}에 저장되었습니다.")
+
+                progress_callback(
+                    "자막이 합성된 이미지 생성 중",
+                    round(((idx + 1) / len(prompts)) * 100),
+                    f"/func_images/{idx+1:0>3}.jpg",
+                )
 
     # Generation is complete
     if progress_callback:

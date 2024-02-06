@@ -110,15 +110,18 @@ def main():
                 else:
                     if script_assistant_instance:
                         # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
-                        subtopics = script_assistant_instance.make_subtopics(
-                            user_input, selected_maintopic
+                        en_subtopics, ko_subtopics = (
+                            script_assistant_instance.make_subtopics(
+                                user_input, selected_maintopic
+                            )
                         )
 
                         # session에 데이터 저장
                         session["user_input"] = user_input
                         session["selected_model"] = selected_model
                         session["selected_maintopic"] = selected_maintopic
-                        session["subtopics"] = subtopics
+                        session["ko_subtopics"] = ko_subtopics
+                        session["en_subtopics"] = en_subtopics
 
                         # script.html 페이지로 리다이렉트
                         return redirect(url_for("script"))
@@ -141,7 +144,10 @@ def script():
     user_input_en = session.get("user_input_en", "")
     selected_model = session.get("selected_model", "")
     selected_maintopic = session.get("selected_maintopic", "")
-    subtopics = session.get("subtopics", "")
+    ko_subtopics = session.get("ko_subtopics", "")
+    en_subtopics = session.get("en_subtopics", "")
+
+    script_assistant_instance = ScriptAssistant(selected_model)
 
     # model image 불러오기
     gemini_logo = os.path.join(app.config["IMAGE_FOLDER"], "Gemini.png")
@@ -171,7 +177,9 @@ def script():
                 print("선택된 소주제 번호:", selected_idx)
 
                 # selected_list : selected_idx에 해당하는 영어 subtopic
-                selected_list = script_assistant_instance.select_subtopics(selected_idx)
+                selected_list = script_assistant_instance.select_subtopics(
+                    en_subtopics, selected_idx
+                )
 
                 # 선택된 소주제에 대한 스크립트 생성
                 def event_stream():
@@ -232,7 +240,7 @@ def script():
         user_input=user_input,
         selected_model=selected_model,
         selected_maintopic=selected_maintopic,
-        subtopics=subtopics,
+        subtopics=ko_subtopics,
         user_input_en=user_input_en,
     )
 
@@ -277,6 +285,7 @@ def video():
     # 이미지 생성용 프롬프트 만들기
     prompts = img_gan_prompt(maintheme, script_list)
     print(prompts)
+    script_assistant_instance = ScriptAssistant("Gemini")
     prompts_en = [script_assistant_instance.translate2en(p) for p in prompts]
     print(prompts_en)
 
@@ -347,9 +356,11 @@ def video():
                 voice_gan_wavenet(script_list, progress_callback=progress_callback)
                 step_now += 1
 
+                image_with_sub = True
                 # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts, progress_callback))
                 start_image = threading.Thread(
-                    target=img_gen_sdxlturb, args=(prompts_en, progress_callback)
+                    target=img_gen_sdxlturb,
+                    args=(script_list, prompts_en, progress_callback, image_with_sub),
                 )
                 start_image.start()
                 start_image.join()

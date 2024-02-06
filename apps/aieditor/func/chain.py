@@ -285,9 +285,9 @@ class ScriptAssistant:
         # self.ko_list = self.translate_chain.batch(self.en_list_batch)
         #########시간을 측정해보니 더 오래걸림##########
 
-        return self.ko_list
+        return self.en_list, self.ko_list
 
-    def select_subtopics(self, selected_idx):
+    def select_subtopics(self, en_list, selected_idx):
         """선택한 subtopic의 index를 받아서, index에 해당하는 subtopic을 반환하는 함수입니다.
 
         script_chain의 프롬프트가 영어이기 때문에, subtopic도 영어로 넣어주기 위해 필요한 함수입니다.
@@ -300,7 +300,7 @@ class ScriptAssistant:
         Returns:
             list: 선택된 index에 해당하는 영어 subtopic을 담은 리스트
         """
-        self.en_selected_list = [self.en_list[i - 1] for i in selected_idx]
+        self.en_selected_list = [en_list[i - 1] for i in selected_idx]
 
         return self.en_selected_list
 
