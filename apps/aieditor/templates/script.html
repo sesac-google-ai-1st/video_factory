@@ -110,7 +110,9 @@
                             </div>
                         </div>
 
-                        <button class="button" type="submit" name="video-button" id="video-button" style="float: right;">생성</button>
+                        <button class="button" type="submit" name="video-button" id="video-button" style="float: right;" onclick="this.classList.toggle('button--loading')">
+                            <span class="button__text">생성</span>
+                        </button>
                         <button class="close_button" onclick="closeSelectedModal(event)">✕</button>
                     </div>
                 </div>

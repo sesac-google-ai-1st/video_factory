@@ -105,8 +105,6 @@ input[type="text"] {
   cursor: pointer;
 }
 
-.close_button
-
 .button:active {
   background: #3baaff;
 }

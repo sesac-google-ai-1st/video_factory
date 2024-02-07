@@ -443,7 +443,7 @@ def video():
 @app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
 def download_video():
     return render_template(
-        "download.html", filename="merge_video.mp4", subtitle="sample.srt"
+        "download.html", filename="final_video.mp4", subtitle="sample.srt"
     )
 
 
