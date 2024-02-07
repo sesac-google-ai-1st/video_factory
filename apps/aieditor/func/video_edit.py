@@ -222,7 +222,7 @@ def backgroundmusic(video_path, bgm_path):
     newclip = CompositeAudioClip([videoclip.audio, loopclip])
     videoclip.audio = newclip
 
-    videoclip.write_videofile(video_path + "merge_video.mp4")
+    videoclip.write_videofile(video_path + "final_video.mp4")
 
 
 # add_static_image_to_video(img, audio, test)
