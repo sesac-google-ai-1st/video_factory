@@ -91,7 +91,21 @@ input[type="text"] {
   outline: none;
   border-radius: 2px;
   cursor: pointer;
+  font-size: larger;
 }
+
+.close_button {
+  font-size: 20px;
+  position: absolute;
+  background-color: white;
+  top: 20px; /* 원하는 상단 여백 값 */
+  right: 25px; /* 원하는 좌측 여백 값 */
+  border: none;
+  /* outline: none; */
+  cursor: pointer;
+}
+
+.close_button
 
 .button:active {
   background: #3baaff;
@@ -302,21 +316,60 @@ input[type=checkbox]:checked + label:before{
   background-color: rgb(0, 0, 0, 0.4)
 }
 
-/* .modal-content {
+.modal-content {
   background-color: #fff;
   padding: 20px;
   border-radius: 5px;
-} */
+}
 
 .modal_body{
   position:absolute;
   top:50%;
   width:400px;
-  height:250px;
+  height:200px;
   padding:40px;  
   text-align: center;
   background-color: rgb(255,255,255);
   border-radius:10px;
   box-shadow:0 2px 3px 0 rgba(34,36,38,0.15);
   transform:translateY(-50%);
+}
+
+.videomodal_body{
+  position:absolute;
+  top:50%;
+  width:950px;
+  height:480px;
+  padding:40px;  
+  text-align: center;
+  background-color: rgb(255,255,255);
+  border-radius:10px;
+  box-shadow:0 2px 3px 0 rgba(34,36,38,0.15);
+  transform:translateY(-50%);
+}
+
+.modelSelect{
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.modelImage{
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+}
+
+.modelContainer{
+  font-size: larger;
+  display: flex;
+  flex-direction: grid;
+  align-items: center;
+}
+
+.subtitle-check{
+  display: flex;
+  /* flex-direction: grid; */
+  align-items: center;
+  font-size: larger;
 }

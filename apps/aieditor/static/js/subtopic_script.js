@@ -131,7 +131,7 @@ function checkFile() {
           if (response.ok) {
             bgmButton.classList.remove('button--loading');
             document.getElementById('music_player').src = filePath;
-            openModal();
+            openBgmModal();
           } else {
             // 파일이 아직 생성되지 않았으면 재귀적으로 계속 확인
             setTimeout(checkFile, 15000);  // 15초마다 확인
@@ -144,7 +144,7 @@ function checkFile() {
 }
 
 
-function openModal() {
+function openBgmModal() {
   const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
   const audio = document.querySelector('audio');
   if (audio) {
@@ -153,7 +153,7 @@ function openModal() {
   modal.style.display = 'flex';
 }
 
-function closeModal(event) {
+function closeBgmModal(event) {
   event.preventDefault();
   const audio = document.querySelector('audio');
   if (audio) {
@@ -165,12 +165,18 @@ function closeModal(event) {
 }
 
 // 모달 외부 클릭 시 닫기
-window.onclick = function(event) {
-  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
-  if (event.target === modal) {
-    closeModal(event);
-  }
-};
+document.addEventListener('DOMContentLoaded', function() {
+  const modal1 = document.querySelector('.modal');
+  const modal2 = document.querySelector('.videomodal');
+
+  window.onclick = function(event) {
+    if (event.target === modal1) {
+      closeBgmModal(event, modal1);
+    } else if (event.target === modal2) {
+      closeSelectedModal(event, modal2);
+    }
+  };
+});
 
 // bgm 사용할지 말지 flask로 전달
 function useornotBgm(radio) {
@@ -194,6 +200,117 @@ function useornotBgm(radio) {
       console.error("Fetch error:", error);
       // Handle the error if needed
   });
+}
+
+
+/**
+ * image model 선택 창 띄우기
+ * @param {HTMLElement} button - 클릭된 bgm 버튼 요소
+ */
+const SelectedButton = document.getElementById('selected-button');
+
+SelectedButton.addEventListener("click", (event) => {
+  event.preventDefault(); 
+  console.log("영상 만들기 버튼 클릭");
+  openSelectedModal();
+});
+
+function openSelectedModal() {
+  const videomodal = document.querySelector('.videomodal');  // 모달의 클래스 선택자로 변경
+  videomodal.style.display = 'flex';
+}
+
+function closeSelectedModal(event) {
+  event.preventDefault();
+  const videomodal = document.querySelector('.videomodal');  // 모달의 클래스 선택자로 변경
+  videomodal.style.display = 'none';
+}
+
+function imageModel(modelRadio) {
+  const selectedValue = modelRadio.value;
+
+  // Send the selected value to the Flask app using fetch
+  fetch("/script", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ imageModel: selectedValue }),
+  })
+  .then(response => {
+      if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      // Handle the response if needed
+  })
+  .catch(error => {
+      console.error("Fetch error:", error);
+      // Handle the error if needed
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const subtitleCheckbox = document.getElementById('subtitle');
+
+  // 페이지 로딩 시 초기 이미지 업데이트
+  updateImage();
+
+  // 초기 체크박스 상태
+  let isChecked = subtitleCheckbox.checked;
+
+  // 체크박스 상태가 변경될 때마다 이미지 업데이트
+  subtitleCheckbox.addEventListener('change', updateImage);
+  // 체크박스 상태가 변경될 때마다 업데이트
+  subtitleCheckbox.addEventListener('change', function(){
+    isChecked = subtitleCheckbox.checked;
+    // 서버로 데이터 전송
+    sendCheckboxState(isChecked);
+  });
+});
+
+function sendCheckboxState(isChecked){
+  fetch("/script", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ isChecked: isChecked }),
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    // Handle the response if needed
+})
+.catch(error => {
+    console.error("Fetch error:", error);
+    // Handle the error if needed
+});
+}
+
+
+function updateImage() {
+  const imageStable = document.getElementById('imageStable');
+  const imageDalle = document.getElementById('imageDalle');
+  const subtitleCheckbox = document.getElementById('subtitle');
+
+  if (subtitleCheckbox.checked) {
+      // 체크된 경우
+      imageStable.src = "/static/image/stable_sub.jpg";
+      imageDalle.src = "/static/image/dalle_sub.jpg";
+      // console.log('체크박스가 선택되었습니다.');
+  } else {
+      // 체크가 해제된 경우
+      imageStable.src = "/static/image/stableDiffusion.jpg";
+      imageDalle.src = "/static/image/dalle.jpg";
+      // console.log('체크박스가 해제되었습니다.');
+  }
+}
+
+function selectImage(radioButtonId) {
+  const radioButton = document.getElementById(radioButtonId);
+  radioButton.checked = true;
+  imageModel(radioButton);
 }
 
 //#region 이벤트

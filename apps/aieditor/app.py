@@ -36,6 +36,8 @@ script_assistant_instance = None
 music_gen_instance = musicGen()
 total_image_count = 0
 bgm_option = "no"
+model_option = "stableDiffusion"
+sub_option = "True"
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -138,6 +140,8 @@ def main():
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
     global bgm_option
+    global model_option
+    global sub_option
 
     # session에 저장된 데이터 불러옴
     user_input = session.get("user_input", "")
@@ -162,6 +166,14 @@ def script():
         if "backgroundmusic" in request.json:
             bgm_option = request.json["backgroundmusic"]
             print("BGM 선택!!!", bgm_option)
+
+        elif "imageModel" in request.json:
+            model_option = request.json["imageModel"]
+            print("Model 선택", model_option)
+
+        elif "isChecked" in request.json:
+            sub_option = request.json["isChecked"]
+            print("자막 옵션:", sub_option)
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
         elif "script_button" in request.json:
@@ -230,7 +242,8 @@ def script():
             # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
             # return redirect(url_for("video"))
 
-    print("BGM 기본값:", bgm_option)
+    # print("BGM 기본값:", bgm_option)
+    # print("model: ", model_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(

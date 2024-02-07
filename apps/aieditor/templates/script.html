@@ -56,14 +56,14 @@
                     <!-- 이곳에 선택한 subtopic과 textarea가 표시됩니다. -->
                 </div>
                 <form method="post" id="video-form">
-                    <button class="button" type="submit" name="video-button" id="video-button" style="float: right;">
+                    <button class="button" name="selected-button" id="selected-button" style="float: right;">
                         <span class="button__text">영상 만들기</span>
                     </button>
                     <button class="button" onclick="this.classList.toggle('button--loading');" name="bgm-button" id="bgm-button" style="float: right; margin-right: 10px;">
                         <span class="button__text">BGM</span>
                     </button>
                 </form>
-                <div class="modal" id="bgm-model">
+                <div class="bgmModal modal" id="bgm-modal">
                     <div class="modal_body">
                         <h2>생성된 배경음원 확인하기</h2>
                         <audio controls id="music_player">
@@ -76,7 +76,42 @@
                             <input type="radio" id="unuse-bgm" name="backgroundmusic" value="no" onclick="useornotBgm(this)" />
                             <label for="unuse-bgm">배경음악 없이 동영상 생성</label>
                         </div>
-                        <button class="button" onclick="closeModal(event)" style="float: right; margin-top: 20px;">닫기</button>
+                        <button class="close_button" onclick="closeBgmModal(event)">✕</button>
+                    </div>
+                </div>
+                <div class="videomodal modal" id="video-modal">
+                    <div class="videomodal_body">
+                        <h2>이미지 생성 모델 선택하기</h2>
+                        <div style="display: flex; margin-top: 40px; margin-left: 20px; justify-content: space-between;">
+                            예시 문장 : "커피 원두가 들어 있는 커피 체리는 몇 달에 걸쳐 익습니다."
+                            <div title="선택과 관련 없이 자막파일은 제공됩니다." class="subtitle-check" id="subCheck" style="margin-right: 30px; justify-content: flex-end;">
+                                <input type="checkbox" id="subtitle" name="subtitle" checked/>
+                                <label for="subtitle">자막 표시</label>
+                            </div>
+                        </div>
+                        <div class="modelSelect">
+                            <div class="modelContainer">
+                                <div class="modelImage" style="margin-right: 20px;">
+                                    <img id="imageStable" src="{{ stable_img }}" alt="SD", width="448" height="256" onclick="selectImage('stableDiffusion')">
+                                    <div style="display: flex; margin-top: 20px;">
+                                        <input type="radio" id="stableDiffusion" name="imageModel" value="stableDiffusion" onclick="imageModel(this)"/>
+                                        <label for="stableDiffusion">Stable Diffusion</label>
+                                        <div title="시간 다소 소요" style="cursor: pointer;">&nbsp;&nbsp;💬</div>
+                                    </div>
+                                </div>
+                                <div class="modelImage">
+                                    <img id="imageDalle" src="{{ dalle_img }}" alt="SD", width="448" height="256" onclick="selectImage('dalle3')">
+                                    <div style="display: flex; margin-top: 20px; cursor: pointer;">
+                                        <input type="radio" id="dalle3" name="imageModel" value="dalle3" onclick="imageModel(this)" />
+                                        <label for="dalle3">dall-e-3</label>
+                                        <div title="유료" style="cursor: pointer;">&nbsp;&nbsp;💬</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="button" type="submit" name="video-button" id="video-button" style="float: right;">생성</button>
+                        <button class="close_button" onclick="closeSelectedModal(event)">✕</button>
                     </div>
                 </div>
             </div>
