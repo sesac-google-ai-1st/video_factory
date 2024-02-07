@@ -4,8 +4,11 @@ import requests
 # diffusers 모델 돌릴때
 from diffusers import AutoPipelineForText2Image
 from PIL import Image, ImageDraw, ImageFont
+
 import platform
 import textwrap
+from io import BytesIO
+import os
 
 
 def textsize(text, font):
@@ -19,17 +22,17 @@ def pil_draw_label(
     image,
     text,
     font_color=(255, 255, 255),
-    font_size=18,
-    max_line_length=32,
-    bottom_margin=20,
+    font_size=32,
+    max_line_length=65,
+    bottom_margin=50,
 ):
     width, height = image.size
-    draw = ImageDraw.Draw(image)
+    draw = ImageDraw.Draw(image, "RGBA")
     if platform.system() == "Darwin":  # 맥
         font = "AppleGothic.ttf"
     elif platform.system() == "Windows":  # 윈도우
         font = "malgunbd.ttf"
-    elif platform.system() == "Linux":  # 리눅스 (구글 콜랩)
+    elif platform.system() == "Linux":  # 리눅스
         """
         !wget "https://www.wfonts.com/download/data/2016/06/13/malgun-gothic/malgunbd.ttf"
         !mv malgun.ttf /usr/share/fonts/truetype/
@@ -47,41 +50,59 @@ def pil_draw_label(
 
     # Calculate the total height of the wrapped text
     total_text_height = 0
-    for line in wrapped_text.split("\n"):
+    lines = wrapped_text.split("\n")
+    for line in lines:
         line_width, line_height = textsize(line, font=imageFont)
         total_text_height += line_height
 
     # Calculate the starting position to center the wrapped text at the bottom
-    x = (width - max_line_length) // 2  # Adjust if needed
     y = height - total_text_height - bottom_margin  # Added margin
+    add_padding = 5
 
-    # Draw each line of the wrapped text
-    for line in wrapped_text.split("\n"):
+    # Draw each line of the wrapped text with background rectangle
+    for line in lines:
         line_width, line_height = textsize(line, font=imageFont)
-        draw.text(((width - line_width) // 2, y), line, font=imageFont, fill=font_color)
-        y += line_height
+        x = (width - line_width) // 2
+        bg_color = (0, 0, 0, 128)  # Black with 50% opacity
+        bg_height = line_height + add_padding  # Added padding
+        draw.rectangle(
+            [(x - add_padding, y), (x + line_width + add_padding, y + bg_height)],
+            fill=bg_color,
+        )
+        draw.text((x, y), line, font=imageFont, fill=font_color)
+        y += bg_height + 1
 
     return image
 
 
-def img_gan_prompt(maintheme, scripts):
+def img_gan_prompt(lang, maintheme, scripts):
     """
     이미지 생성을 위한 프롬프트 생성 함수
     인수 메인테마, 스크립트 : list 변수
     """
     prompts = []
-    for prompt in scripts:
-        prompts.append(
-            f"영상의 주제에 맞춰서 이미지(장면)를 그려줘, 영상 주제는 {maintheme}이고, 제작 요청 이미지 : {prompt}. 주의!!! 영상 주제({maintheme})에 어울리게 이미지를 그려줘"
-        )
-    return prompts
+
+    if lang == "ko":
+        for prompt in scripts:
+            prompts.append(
+                f"영상 주제에 맞춰서 이미지(장면)를 그려줘, 영상 주제는 '{maintheme}'이고, 제작 요청 이미지 : {prompt}. 주의!!! 영상 주제({maintheme})에 어울리게 이미지를 그려줘"
+            )
+        return prompts
+    else:
+        for prompt in scripts:
+            prompts.append(
+                f"""Draw an image (scene) that matches the theme of the video. Video theme: "{maintheme}"
+                Requested image: {prompt}
+                Attention!!! Draw an image that matches the theme of the video ({maintheme})."""
+            )
+        return prompts
 
 
 # img_gan_prompt(maintheme, scripts)
 # print(prompts)
 
 
-def img_gan_dalle3(api_key, prompts, progress_callback=None):
+def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=False):
     """
     dalle3 모델로 이미지를 생성하는 함수,
     인수 openAI api kes, img_gan_prompt 함수로 생성한 prompts : list
@@ -90,9 +111,14 @@ def img_gan_dalle3(api_key, prompts, progress_callback=None):
     client = OpenAI(api_key=api_key)
     # size = "256x256" # dalle2
     # size = "512x512" # dalle2
-    size = "1024x1024"  # dalle3
-    # size = "1792x1024" # dalle3
+    # size = "1024x1024"  # dalle3
+    size = "1792x1024"  # dalle3
     # size = "1024x1792" # dalle3
+
+    # Generation start
+    if progress_callback:
+        progress_callback("이미지 생성 중", 0)
+
     for idx, prompt in enumerate(prompts):
         response = client.images.generate(
             model="dall-e-3",  # 모델명
@@ -109,17 +135,45 @@ def img_gan_dalle3(api_key, prompts, progress_callback=None):
         response = requests.get(image_url, stream=True)
 
         # 응답 상태 코드가 200 OK 인지 확인합니다.
-        img_filename = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/{idx+1:0>3}.jpg"
+        output_folder = "apps/aieditor/func/images"
+        output_path = os.path.join(output_folder, f"{idx+1:0>3}.jpg")
 
-        # 바이너리 쓰기 모드(b)로 파일을 열고 이미지 데이터를 기록합니다.
-        with open(img_filename, "wb") as out_file:
-            # 이미지 데이터를 파일에 씁니다.
-            out_file.write(response.content)
-            print(f"이미지 파일이 '{img_filename}'로 저장되었습니다.")
+        # output_folder가 없으면 만듦
+        os.makedirs(output_folder, exist_ok=True)
 
-        # Emit progress update to the client
-        if progress_callback:
-            progress_callback("이미지 생성 중", round(((idx + 1) / len(prompts)) * 100))
+        if not with_sub:  # 자막 없는 이미지
+            # 바이너리 쓰기 모드(b)로 파일을 열고 이미지 데이터를 기록합니다.
+            with open(output_path, "wb") as out_file:
+                # 이미지 데이터를 파일에 씁니다.
+                out_file.write(response.content)
+                print(f"이미지 파일이 '{output_path}'로 저장되었습니다.")
+
+            # Emit progress update to the client
+            if progress_callback:
+                progress_callback(
+                    "이미지 생성 중",
+                    round(((idx + 1) / len(prompts)) * 100),
+                    f"/func_images/{idx+1:0>3}.jpg",
+                )
+
+        elif with_sub:  # 자막 있는 이미지
+            print("자막 있음")
+            # Emit progress update to the client
+            if progress_callback:
+                sub = script[idx]
+                print("자막", sub)
+                # 자막 추가
+                image = pil_draw_label(Image.open(BytesIO(response.content)), sub)  ####
+
+                # 결과 이미지 저장
+                image.save(output_path)
+                print(f"이미지가 {output_path}에 저장되었습니다.")
+
+                progress_callback(
+                    "자막이 합성된 이미지 생성 중",
+                    round(((idx + 1) / len(prompts)) * 100),
+                    f"/func_images/{idx+1:0>3}.jpg",
+                )
 
     # Generation is complete
     if progress_callback:
@@ -131,8 +185,8 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
     # 파이프 라인 만들기(sdxl turbo 모델 가져오기)
     pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo")
 
-    width = 1280 // 2
-    height = 720 // 2
+    width = 1280
+    height = 720
 
     # Generation start
     if progress_callback:
@@ -152,12 +206,16 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
         if not isinstance(image, Image.Image):
             image = Image.fromarray(image)
 
-        file_path = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/{idx+1:0>3}.jpg"
+        output_folder = "apps/aieditor/func/images"
+        output_path = os.path.join(output_folder, f"{idx+1:0>3}.jpg")
+
+        # output_folder가 없으면 만듦
+        os.makedirs(output_folder, exist_ok=True)
 
         if not with_sub:  # 자막 없는 이미지
             # 이미지 저장
-            image.save(file_path)
-            print(f"이미지가 {file_path}에 저장되었습니다.")
+            image.save(output_path)
+            print(f"이미지가 {output_path}에 저장되었습니다.")
 
             # Emit progress update to the client
             if progress_callback:
@@ -171,15 +229,20 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
             print("자막 있음")
             # Emit progress update to the client
             if progress_callback:
-                print("이미지에 자막 다는 중")
                 sub = script[idx]
-                print(sub)
+                print("자막 :", sub)
                 # 자막 추가
-                image = pil_draw_label(image, sub)
+                image = pil_draw_label(
+                    image,
+                    sub,
+                    font_size=25,
+                    max_line_length=50,
+                    bottom_margin=40,
+                )
 
                 # 결과 이미지 저장
-                image.save(file_path)
-                print(f"이미지가 {file_path}에 저장되었습니다.")
+                image.save(output_path)
+                print(f"이미지가 {output_path}에 저장되었습니다.")
 
                 progress_callback(
                     "자막이 합성된 이미지 생성 중",

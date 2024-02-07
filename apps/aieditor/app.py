@@ -34,10 +34,9 @@ main_topics = []
 subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
-total_image_count = 0
 bgm_option = "no"
 model_option = "stableDiffusion"
-sub_option = "True"
+sub_option = True
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -111,10 +110,16 @@ def main():
                     show_subtopic_form = True
                 else:
                     if script_assistant_instance:
+                        selected_maintopic_en = script_assistant_instance.translate2en(
+                            selected_maintopic
+                        )
+                        session["selected_maintopic_en"] = selected_maintopic_en
+
                         # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
                         en_subtopics, ko_subtopics = (
                             script_assistant_instance.make_subtopics(
-                                user_input, selected_maintopic
+                                session.get("user_input_en", user_input),
+                                selected_maintopic_en,
                             )
                         )
 
@@ -148,6 +153,7 @@ def script():
     user_input_en = session.get("user_input_en", "")
     selected_model = session.get("selected_model", "")
     selected_maintopic = session.get("selected_maintopic", "")
+    selected_maintopic_en = session.get("selected_maintopic_en", "")
     ko_subtopics = session.get("ko_subtopics", "")
     en_subtopics = session.get("en_subtopics", "")
 
@@ -213,7 +219,7 @@ def script():
                         for i in range(len(checkedNames)):
                             print(f"===== {i+1}번째 스크립트를 작성합니다. =====")
                             for chunk in script_assistant_instance.make_scripts(
-                                selected_maintopic, selected_list, str(i + 1)
+                                selected_maintopic_en, selected_list, str(i + 1)
                             ):
                                 print(chunk)
                                 if chunk:
@@ -281,26 +287,33 @@ step_total = 3
 
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
-    global total_image_count, step_now
+    global step_now, model_option
 
     step_now = 1
 
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
-    maintheme = session.get("selected_maintopic", "")
+    maintheme_ko = session.get("selected_maintopic", "")
+    maintheme_en = session.get("selected_maintopic_en", "")
     bgm_name = session.get("user_input_en", "")
 
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
     script_list = script_splitter_instance.split_script2sentences(script_data)
-    total_image_count = len(script_list)  # 총 생성될 이미지 개수 = 문장 개수
 
     # 이미지 생성용 프롬프트 만들기
-    prompts = img_gan_prompt(maintheme, script_list)
-    print(prompts)
-    script_assistant_instance = ScriptAssistant("Gemini")
-    prompts_en = [script_assistant_instance.translate2en(p) for p in prompts]
-    print(prompts_en)
+    # dalle 선택한 경우
+    if model_option == "dalle3":
+        dalle_prompts = img_gan_prompt("ko", maintheme_ko, script_list)
+        print(dalle_prompts)
+    # stable 선택한 경우
+    elif model_option == "stableDiffusion":
+        script_assistant_instance = ScriptAssistant("Gemini")
+        script_list_en = [
+            script_assistant_instance.translate2en(script) for script in script_list
+        ]
+        stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
+        print(stable_diffusion_prompts)
 
     def progress_callback(description, progress, image_url=None):
         global step_now, step_total
@@ -363,18 +376,36 @@ def video():
     # voice, image를 생성한 후
     def thread_start():
         global video_generation_complete
-        global bgm_option, step_now
+        global bgm_option, step_now, model_option, sub_option
         with app.app_context():
             try:
                 voice_gan_wavenet(script_list, progress_callback=progress_callback)
                 step_now += 1
 
-                image_with_sub = True
-                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts, progress_callback))
-                start_image = threading.Thread(
-                    target=img_gen_sdxlturb,
-                    args=(script_list, prompts_en, progress_callback, image_with_sub),
-                )
+                # image_with_sub 사용자 선택 여부에 따라 바뀜
+                image_with_sub = sub_option
+                if model_option == "dalle3":
+                    start_image = threading.Thread(
+                        target=img_gan_dalle3,
+                        args=(
+                            api_key,
+                            script_list,
+                            dalle_prompts,
+                            progress_callback,
+                            image_with_sub,
+                        ),
+                    )
+                elif model_option == "stableDiffusion":
+                    start_image = threading.Thread(
+                        target=img_gen_sdxlturb,
+                        args=(
+                            script_list,
+                            stable_diffusion_prompts,
+                            progress_callback,
+                            image_with_sub,
+                        ),
+                    )
+
                 start_image.start()
                 start_image.join()
                 step_now += 1

@@ -17,9 +17,7 @@ from langchain_core.output_parsers import StrOutputParser
 class ScriptAssistant:
     def __init__(self, llm_name):
         # 번역하는 프롬프트
-        self.translate2ko_prompt = """If the text below is not in Korean, translate it into Korean. There is no need to add an explanation. 
-        \n\n
-        {text}"""
+        self.translate2ko_prompt = """Translate "{text}" to Korean."""
 
         # main topic 생성하는 프롬프트
         # input: youtube topic
@@ -208,7 +206,7 @@ class ScriptAssistant:
             str: 영어로 번역된 주제
         """
         self.translate2en_prompt = ChatPromptTemplate.from_template(
-            "Please translate the text below into English. \n text: {text}"
+            """Translate "{text}" to English."""
         )
         self.model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
         self.translate2en_chain = self.translate2en_prompt | self.model
