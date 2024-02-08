@@ -465,7 +465,7 @@ def download_video():
         filename = "final_video.mp4"
     else:
         filename = "merge_video.mp4"
-    return render_template("download.html", filename=filename, subtitle="sample.srt")
+    return render_template("download.html", filename=filename, subtitle="sub.srt")
 
 
 # subtitle과 video 다운로드를 위한 코드
