@@ -7,6 +7,7 @@ from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
+from apps.aieditor.func.naver import voice_gan_naver
 from apps.aieditor.func.video_edit import (
     add_static_image_to_video,
     backgroundmusic,
@@ -25,17 +26,19 @@ app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
 # openai api key 이건 삭제하고 업로드
 api_key = ""
 
-video_generation_complete = False
-
+# image 찾아올 경로 설정하기
 imgPath = os.path.join("static", "image")
 app.config["IMAGE_FOLDER"] = imgPath
 
+# 필요 옵션들 변수 선언하기
 main_topics = []
 subtopics = []
 script_assistant_instance = None
 music_gen_instance = musicGen()
-total_image_count = 0
 bgm_option = "no"
+model_option = "stableDiffusion"
+sub_option = True
+video_generation_complete = False
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -109,16 +112,25 @@ def main():
                     show_subtopic_form = True
                 else:
                     if script_assistant_instance:
+                        selected_maintopic_en = script_assistant_instance.translate2en(
+                            selected_maintopic
+                        )
+                        session["selected_maintopic_en"] = selected_maintopic_en
+
                         # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
-                        subtopics = script_assistant_instance.make_subtopics(
-                            user_input, selected_maintopic
+                        en_subtopics, ko_subtopics = (
+                            script_assistant_instance.make_subtopics(
+                                session.get("user_input_en", user_input),
+                                selected_maintopic_en,
+                            )
                         )
 
                         # session에 데이터 저장
                         session["user_input"] = user_input
                         session["selected_model"] = selected_model
                         session["selected_maintopic"] = selected_maintopic
-                        session["subtopics"] = subtopics
+                        session["ko_subtopics"] = ko_subtopics
+                        session["en_subtopics"] = en_subtopics
 
                         # script.html 페이지로 리다이렉트
                         return redirect(url_for("script"))
@@ -135,13 +147,19 @@ def main():
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
     global bgm_option
+    global model_option
+    global sub_option
 
-    # session에 저장된 데이터 불러옴
+    # session에 저장된 데이터 불러오기
     user_input = session.get("user_input", "")
     user_input_en = session.get("user_input_en", "")
     selected_model = session.get("selected_model", "")
     selected_maintopic = session.get("selected_maintopic", "")
-    subtopics = session.get("subtopics", "")
+    selected_maintopic_en = session.get("selected_maintopic_en", "")
+    ko_subtopics = session.get("ko_subtopics", "")
+    en_subtopics = session.get("en_subtopics", "")
+
+    script_assistant_instance = ScriptAssistant(selected_model)
 
     # model image 불러오기
     gemini_logo = os.path.join(app.config["IMAGE_FOLDER"], "Gemini.png")
@@ -157,6 +175,16 @@ def script():
             bgm_option = request.json["backgroundmusic"]
             print("BGM 선택!!!", bgm_option)
 
+        # image model 선택 옵션
+        elif "imageModel" in request.json:
+            model_option = request.json["imageModel"]
+            print("Model 선택", model_option)
+
+        # 자막 옵션을 선택한 경우
+        elif "isChecked" in request.json:
+            sub_option = request.json["isChecked"]
+            print("자막 옵션:", sub_option)
+
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
         elif "script_button" in request.json:
             print("request.json:", request.json)
@@ -171,7 +199,9 @@ def script():
                 print("선택된 소주제 번호:", selected_idx)
 
                 # selected_list : selected_idx에 해당하는 영어 subtopic
-                selected_list = script_assistant_instance.select_subtopics(selected_idx)
+                selected_list = script_assistant_instance.select_subtopics(
+                    en_subtopics, selected_idx
+                )
 
                 # 선택된 소주제에 대한 스크립트 생성
                 def event_stream():
@@ -193,7 +223,7 @@ def script():
                         for i in range(len(checkedNames)):
                             print(f"===== {i+1}번째 스크립트를 작성합니다. =====")
                             for chunk in script_assistant_instance.make_scripts(
-                                selected_maintopic, selected_list, str(i + 1)
+                                selected_maintopic_en, selected_list, str(i + 1)
                             ):
                                 print(chunk)
                                 if chunk:
@@ -222,7 +252,8 @@ def script():
             # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
             # return redirect(url_for("video"))
 
-    print("BGM 기본값:", bgm_option)
+    # print("BGM 기본값:", bgm_option)
+    # print("model: ", model_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
@@ -232,40 +263,15 @@ def script():
         user_input=user_input,
         selected_model=selected_model,
         selected_maintopic=selected_maintopic,
-        subtopics=subtopics,
+        subtopics=ko_subtopics,
         user_input_en=user_input_en,
     )
-
-
-# 이미지 확인을 위한 엔드포인트 추가
-@app.route("/check_image/<int:index>", methods=["GET"])
-def check_image(index):
-    global total_image_count
-
-    image_folder_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-    )
-    image_filename = f"{index:0>3}.jpg"
-    image_path = os.path.join(image_folder_path, image_filename)
-
-    # 해당 인덱스의 이미지 파일이 있는지 확인합니다.
-    if os.path.exists(image_path):
-        return jsonify(
-            {"image_exists": True, "total_image_count": total_image_count}
-        )  # 이미지가 있으면 True를 응답합니다.
-    else:
-        return (
-            jsonify({"image_exists": False, "total_image_count": total_image_count}),
-            404,
-        )  # 이미지가 없으면 404 에러와 함께 False를 응답합니다.
 
 
 # 특정 경로에 저장된 이미지 파일을 로드하기 위한 엔드포인트 추가
 @app.route("/func_images/<path:filename>")
 def func_images(filename):
-    image_folder_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-    )
+    image_folder_path = "func\\images\\"
     return send_from_directory(image_folder_path, filename)
 
 
@@ -283,25 +289,35 @@ step_total = 3
 
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
-    global total_image_count
+    global step_now, model_option
+
+    step_now = 1
 
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
-    maintheme = session.get("selected_maintopic", "")
+    maintheme_ko = session.get("selected_maintopic", "")
+    maintheme_en = session.get("selected_maintopic_en", "")
     bgm_name = session.get("user_input_en", "")
 
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
     script_list = script_splitter_instance.split_script2sentences(script_data)
-    total_image_count = len(script_list)  # 총 생성될 이미지 개수 = 문장 개수
 
     # 이미지 생성용 프롬프트 만들기
-    prompts = img_gan_prompt(maintheme, script_list)
-    print(prompts)
-    prompts_en = [script_assistant_instance.translate2en(p) for p in prompts]
-    print(prompts_en)
+    # dalle 선택한 경우
+    if model_option == "dalle3":
+        dalle_prompts = img_gan_prompt("ko", maintheme_ko, script_list)
+        print(dalle_prompts)
+    # stable 선택한 경우
+    elif model_option == "stableDiffusion":
+        script_assistant_instance = ScriptAssistant("Gemini")
+        script_list_en = [
+            script_assistant_instance.translate2en(script) for script in script_list
+        ]
+        stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
+        print(stable_diffusion_prompts)
 
-    def progress_callback(description, progress):
+    def progress_callback(description, progress, image_url=None):
         global step_now, step_total
 
         print(description, progress)
@@ -311,26 +327,25 @@ def video():
                 "description": description,
                 "progress": progress,
                 "step_now_total": f"STEP {step_now} / {step_total}",
+                "image_url": image_url,
             },
             namespace="/video",
         )
 
-    # 비디오 생성 쓰레드 만들기
+    # 비디오 생성 스레드 만들기
     def start_video_thread():
         global step_now
-
         with app.app_context():
-            image_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-            )
-            audio_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
-            )
-            clip_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
-            )
-            output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+            image_path = "apps/aieditor/func/images/"
+            audio_path = "apps/aieditor/func/voice/"
+            clip_path = "apps/aieditor/func/clip/"
+            output_path = "apps/aieditor/func/finalclip/"
 
+            # path가 없으면 만듦
+            os.makedirs(clip_path, exist_ok=True)
+            os.makedirs(output_path, exist_ok=True)
+
+            # 비디오 생성하는 함수
             add_static_image_to_video(
                 image_path,
                 audio_path,
@@ -341,53 +356,81 @@ def video():
 
         step_now += 1
 
+    # backgroundmusic 생성을 위한 스레드
     def bgm_thread():
         with app.app_context():
-            video_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
-            bgm_path = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
+            video_path = "apps/aieditor/func/finalclip/"
+            bgm_path = f"apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
+
+            # bgm 생성 함수
             backgroundmusic(video_path, bgm_path)
 
+    # 자막 파일 생성하는 스레드
     def subtitle_thread():
         with app.app_context():
-            audio_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
-            )
-            clip_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
-            )
+            audio_path = "apps/aieditor/func/voice/"
+            clip_path = "apps/aieditor/func/clip/"
 
+            # 자막파일 생성 함수
             make_subtitle(audio_path, clip_path, script_list)
 
-    # voice, image를 생성한 후
+    # 앞서 생성한 스레드 함수들이 차례대로 돌아갈 수 있도록 작성
     def thread_start():
         global video_generation_complete
-        global bgm_option, step_now
+        global bgm_option, step_now, model_option, sub_option
         with app.app_context():
             try:
                 voice_gan_wavenet(script_list, progress_callback=progress_callback)
+                # voice_gan_naver(script_list, progress_callback=progress_callback)
                 step_now += 1
 
-                # start_image = threading.Thread(target=img_gan_dalle3, args=(api_key, prompts, progress_callback))
-                start_image = threading.Thread(
-                    target=img_gen_sdxlturb, args=(prompts_en, progress_callback)
-                )
+                # image_with_sub 사용자 선택 여부에 따라 바뀜
+                image_with_sub = sub_option
+                if model_option == "dalle3":
+                    start_image = threading.Thread(
+                        target=img_gan_dalle3,
+                        args=(
+                            api_key,
+                            script_list,
+                            dalle_prompts,
+                            progress_callback,
+                            image_with_sub,
+                        ),
+                    )
+                elif model_option == "stableDiffusion":
+                    start_image = threading.Thread(
+                        target=img_gen_sdxlturb,
+                        args=(
+                            script_list,
+                            stable_diffusion_prompts,
+                            progress_callback,
+                            image_with_sub,
+                        ),
+                    )
+
+                # image 스레드 시작
                 start_image.start()
                 start_image.join()
                 step_now += 1
 
+                # image 생성 종료 이후 video 스레드 시작
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
 
+                # video 생성이 끝난 후 자막 파일 생성함
                 start_subtitle = threading.Thread(target=subtitle_thread)
                 start_subtitle.start()
                 start_subtitle.join()
 
+                # bgm 옵션을 선택했을 때, 비디오에 bgm을 합성하는 스레드 시작
                 if bgm_option == "yes":
                     start_bgm = threading.Thread(target=bgm_thread)
                     start_bgm.start()
                     start_bgm.join()
 
+                # 위 과정이 전부 완료되고 나면 video_generation_complete 변수에 True를 할당
+                # socket을 사용하여 /video 서버에 요청을 보냄
                 video_generation_complete = True
                 socketio.emit("video_generation_complete", namespace="/video")
 
@@ -401,30 +444,40 @@ def video():
     thread = threading.Thread(target=thread_start)
     thread.start()
 
-    # video.html 화면 띄우기
+    # 스레드가 시작되면 video.html 화면 띄우기
     return render_template("video.html")
 
 
 @app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
 def download_video():
-    return render_template(
-        "download.html", filename="merge_video.mp4", subtitle="sample.srt"
-    )
+    """
+    /download_video에 return 하고싶은 비디오를 render_template을 사용하여 띄웁니다.
+    bgm 옵션에 따라 최종 영상의 이름이 달라지기 때문에 그것을 고려하여
+    output_path에 final_video가 있으면 final_video를,
+    없으면 그 이전 단계인 merge_video를 보냅니다.
 
-
-@app.route("/download/<filename>")
-def download(filename):
-    finalclip_folder_path = (
+    """
+    video_path = (
         "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
     )
+    file = "final_video.mp4"
+    if os.path.exists(os.path.join(video_path, file)):
+        filename = "final_video.mp4"
+    else:
+        filename = "merge_video.mp4"
+    return render_template("download.html", filename=filename, subtitle="sample.srt")
+
+
+# subtitle과 video 다운로드를 위한 코드
+@app.route("/download/<filename>")
+def download(filename):
+    finalclip_folder_path = "func\\finalclip\\"
     return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
 
 
 @app.route("/download_sb", methods=["GET"])
 def download_sb():
-    sb_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/sample.srt"
-    )
+    sb_path = "func\\sub.srt"
     return send_file(sb_path, as_attachment=True)
 
 

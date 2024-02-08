@@ -1,6 +1,7 @@
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import scipy
 import torch
+import os
 
 # pip install git+https://github.com/huggingface/transformers.git
 
@@ -35,8 +36,15 @@ class musicGen:
         audio_values = audio_values.to("cpu")
 
         sampling_rate = self.model.config.audio_encoder.sampling_rate
+
+        output_folder = "apps/aieditor/static/audio"
+        output_path = os.path.join(output_folder, f"musicgen_{user_input_en}.wav")
+
+        # output_folder가 없으면 만듦
+        os.makedirs(output_folder, exist_ok=True)
+
         scipy.io.wavfile.write(
-            f"apps/aieditor/static/audio/musicgen_{user_input_en}.wav",
+            output_path,
             rate=sampling_rate,
             data=audio_values[0, 0].numpy(),
         )

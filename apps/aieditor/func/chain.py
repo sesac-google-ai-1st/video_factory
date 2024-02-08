@@ -17,8 +17,7 @@ from langchain_core.output_parsers import StrOutputParser
 class ScriptAssistant:
     def __init__(self, llm_name):
         # 번역하는 프롬프트
-        self.translate2ko_prompt = """If the text below is in Korean, do nothing and return the text as is. 
-        If not, please translate it into Korean. There is no need to add an explanation. \n text: {text}"""
+        self.translate2ko_prompt = """Translate "{text}" to Korean."""
 
         # main topic 생성하는 프롬프트
         # input: youtube topic
@@ -198,16 +197,16 @@ class ScriptAssistant:
         )  # stream을 위해 output_parser 추가
 
     def translate2en(self, text):
-        """BGM 생성에 메인 주제를 영어로 입력하기 위한 번역 함수
+        """LLM을 사용하여 한글을 영어로 번역하는 함수. Gemini로 번역을 수행합니다.
 
         Args:
-            text (str): 사용자가 입력한 주제
+            text (str): 한글
 
         Returns:
-            str: 영어로 번역된 주제
+            str: 영어
         """
         self.translate2en_prompt = ChatPromptTemplate.from_template(
-            "Please translate the text below into English. \n text: {text}"
+            """Translate "{text}" to English."""
         )
         self.model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
         self.translate2en_chain = self.translate2en_prompt | self.model
@@ -227,10 +226,13 @@ class ScriptAssistant:
         """
         self.main_dic = self.maintopic_chain.invoke({"youtube_topic": user_input})
         print("===== 주제 생성이 완료되었습니다! =====\n", self.main_dic)
-        self.main_list = [""] * 10  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
+        self.main_list = [
+            ""
+        ] * 10  # 문자열을 줄바꿈으로 분리하고, 주제 이외는 다 제거함
         self.count = 10
 
         for sen in self.main_dic["text"].split("\n")[::-1]:
+            sen = sen.strip()
             if "." in sen:
                 self.main_list[self.count - 1] = sen.split(".", 1)[-1].strip()
                 self.count -= 1
@@ -266,7 +268,12 @@ class ScriptAssistant:
         ]
 
         self.ko_result = self.translate_chain.invoke({"text": "\n".join(self.en_list)})
-        print("===== 소주제 생성이 완료되었습니다! =====\n", self.en_result, "\n", self.ko_result)
+        print(
+            "===== 소주제 생성이 완료되었습니다! =====\n",
+            self.en_result,
+            "\n",
+            self.ko_result,
+        )
         self.ko_list = list(
             map(lambda x: x.strip(), self.ko_result.content.split("\n"))
         )
@@ -276,9 +283,9 @@ class ScriptAssistant:
         # self.ko_list = self.translate_chain.batch(self.en_list_batch)
         #########시간을 측정해보니 더 오래걸림##########
 
-        return self.ko_list
+        return self.en_list, self.ko_list
 
-    def select_subtopics(self, selected_idx):
+    def select_subtopics(self, en_list, selected_idx):
         """선택한 subtopic의 index를 받아서, index에 해당하는 subtopic을 반환하는 함수입니다.
 
         script_chain의 프롬프트가 영어이기 때문에, subtopic도 영어로 넣어주기 위해 필요한 함수입니다.
@@ -291,7 +298,7 @@ class ScriptAssistant:
         Returns:
             list: 선택된 index에 해당하는 영어 subtopic을 담은 리스트
         """
-        self.en_selected_list = [self.en_list[i - 1] for i in selected_idx]
+        self.en_selected_list = [en_list[i - 1] for i in selected_idx]
 
         return self.en_selected_list
 
