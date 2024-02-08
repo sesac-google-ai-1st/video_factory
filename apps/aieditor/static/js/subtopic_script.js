@@ -116,12 +116,14 @@ function createTextarea(checkedNames, index) {
  */
 const bgmButton = document.getElementById('bgm-button');
 
+// bgm 버튼이 클릭되면 처리할 함수
 bgmButton.addEventListener("click", (event) => {
   event.preventDefault(); 
   console.log("BGM 버튼 클릭");
-  checkFile();
+  checkFile();    // bgm 파일이 생성되었는지 check
 });
 
+// bgm check 함수
 function checkFile() {
   var user_input = document.getElementById('user_input').getAttribute('value');
   var filePath = `static/audio/musicgen_${user_input}.wav`;
@@ -146,66 +148,67 @@ function checkFile() {
 
 function openBgmModal() {
   const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
-  const audio = document.querySelector('audio');
+  const audio = document.querySelector('audio');  // audio 태그를 찾아 변수에 할당
   if (audio) {
     audio.volume = 0.5;   // 기본 볼륨 0.5로 설정
   }
-  modal.style.display = 'flex';
+  modal.style.display = 'flex';  // modal 변수의 css 스타일 중 display 속성을 flex로 변경 
 }
 
 function closeBgmModal(event) {
   event.preventDefault();
-  const audio = document.querySelector('audio');
+  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
+  const audio = document.querySelector('audio');  // audio 태그를 찾아 변수에 할당
   if (audio) {
-    audio.pause();   // 오디오 멈추기
+    audio.pause();   // modal 닫을 때 오디오 멈추기
     audio.currentTime = 0;    // 오디오 시작지점으로 바꾸기
   }
-  const modal = document.querySelector('.modal');  // 모달의 클래스 선택자로 변경
-  modal.style.display = 'none';
+  modal.style.display = 'none';  // modal 변수의 display 속성을 none으로 변경, 모달 안보이도록 감추기
 }
 
 // 모달 외부 클릭 시 닫기
+// 모달이 2개이기 때문에 각각 할당해서 처리
 document.addEventListener('DOMContentLoaded', function() {
-  const modal1 = document.querySelector('.modal');
-  const modal2 = document.querySelector('.videomodal');
+  const modal1 = document.querySelector('.modal');  // bgm 모달을 modal1에 할당
+  const modal2 = document.querySelector('.videomodal');  // image model option 모달을 modal2에 할당
 
-  window.onclick = function(event) {
-    if (event.target === modal1) {
-      closeBgmModal(event, modal1);
-    } else if (event.target === modal2) {
-      closeSelectedModal(event, modal2);
+  window.onclick = function(event) {  // 클릭 이벤트 발생 시 실행할 함수
+    if (event.target === modal1) {    // 클릭 이벤트 발생한 곳이 modal1일 때
+      closeBgmModal(event, modal1);   // bgm modal 닫기
+    } else if (event.target === modal2) {    // 클릭 이벤트 발생한 곳이 modal2일 때
+      closeSelectedModal(event, modal2);   // selected modal 닫기
     }
   };
 });
 
 // bgm 사용할지 말지 flask로 전달
 function useornotBgm(radio) {
-  const selectedValue = radio.value;
+  const selectedValue = radio.value;  // radio값을 받아와서 selectedValue에 저장
 
-  // Send the selected value to the Flask app using fetch
   fetch("/script", {
+      // method를 POST로 지정, 서버에 데이터 전달
       method: "POST",
+      // 요청 header에 json 데이터 전송
       headers: {
           "Content-Type": "application/json",
       },
+      // selectedValue 값을 JSON 형식으로 변환하여 처리
       body: JSON.stringify({ backgroundmusic: selectedValue }),
   })
-  .then(response => {
+  .then(response => {   // 응답이 처리되지 않았을 때
       if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      // Handle the response if needed
   })
   .catch(error => {
       console.error("Fetch error:", error);
-      // Handle the error if needed
   });
 }
 
 
 /**
  * image model 선택 창 띄우기
- * @param {HTMLElement} button - 클릭된 bgm 버튼 요소
+ * @param {HTMLElement} button - 클릭된 <영상 만들기> 버튼 요소
  */
 const SelectedButton = document.getElementById('selected-button');
 
@@ -268,6 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
+// 자막 선택 체크박스 전송
 function sendCheckboxState(isChecked){
   fetch("/script", {
     method: "POST",
@@ -280,33 +284,31 @@ function sendCheckboxState(isChecked){
     if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    // Handle the response if needed
 })
 .catch(error => {
     console.error("Fetch error:", error);
-    // Handle the error if needed
 });
 }
 
-
+// subtitle이 선택됨에 따라 이미지 변경
 function updateImage() {
+  // stable, dalle 이미지와 subtitle checkbox에 각각 변수 할당
   const imageStable = document.getElementById('imageStable');
   const imageDalle = document.getElementById('imageDalle');
   const subtitleCheckbox = document.getElementById('subtitle');
 
   if (subtitleCheckbox.checked) {
-      // 체크된 경우
+      // 자막 체크된 경우 이미지
       imageStable.src = "/static/image/stable_sub.jpg";
       imageDalle.src = "/static/image/dalle_sub.jpg";
-      // console.log('체크박스가 선택되었습니다.');
   } else {
-      // 체크가 해제된 경우
+      // 자막 체크가 해제된 경우 이미지
       imageStable.src = "/static/image/stableDiffusion.jpg";
       imageDalle.src = "/static/image/dalle.jpg";
-      // console.log('체크박스가 해제되었습니다.');
   }
 }
 
+// model 선택 시 이미지만 클릭해도 radio가 선택될 수 있도록 함
 function selectImage(radioButtonId) {
   const radioButton = document.getElementById(radioButtonId);
   radioButton.checked = true;

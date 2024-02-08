@@ -26,11 +26,11 @@ app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
 # openai api key 이건 삭제하고 업로드
 api_key = ""
 
-video_generation_complete = False
-
+# image 찾아올 경로 설정하기
 imgPath = os.path.join("static", "image")
 app.config["IMAGE_FOLDER"] = imgPath
 
+# 필요 옵션들 변수 선언하기
 main_topics = []
 subtopics = []
 script_assistant_instance = None
@@ -38,6 +38,7 @@ music_gen_instance = musicGen()
 bgm_option = "no"
 model_option = "stableDiffusion"
 sub_option = True
+video_generation_complete = False
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -149,7 +150,7 @@ def script():
     global model_option
     global sub_option
 
-    # session에 저장된 데이터 불러옴
+    # session에 저장된 데이터 불러오기
     user_input = session.get("user_input", "")
     user_input_en = session.get("user_input_en", "")
     selected_model = session.get("selected_model", "")
@@ -174,10 +175,12 @@ def script():
             bgm_option = request.json["backgroundmusic"]
             print("BGM 선택!!!", bgm_option)
 
+        # image model 선택 옵션
         elif "imageModel" in request.json:
             model_option = request.json["imageModel"]
             print("Model 선택", model_option)
 
+        # 자막 옵션을 선택한 경우
         elif "isChecked" in request.json:
             sub_option = request.json["isChecked"]
             print("자막 옵션:", sub_option)
@@ -329,10 +332,9 @@ def video():
             namespace="/video",
         )
 
-    # 비디오 생성 쓰레드 만들기
+    # 비디오 생성 스레드 만들기
     def start_video_thread():
         global step_now
-
         with app.app_context():
             image_path = "apps/aieditor/func/images/"
             audio_path = "apps/aieditor/func/voice/"
@@ -343,6 +345,7 @@ def video():
             os.makedirs(clip_path, exist_ok=True)
             os.makedirs(output_path, exist_ok=True)
 
+            # 비디오 생성하는 함수
             add_static_image_to_video(
                 image_path,
                 audio_path,
@@ -353,20 +356,25 @@ def video():
 
         step_now += 1
 
+    # backgroundmusic 생성을 위한 스레드
     def bgm_thread():
         with app.app_context():
             video_path = "apps/aieditor/func/finalclip/"
             bgm_path = f"apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
+
+            # bgm 생성 함수
             backgroundmusic(video_path, bgm_path)
 
+    # 자막 파일 생성하는 스레드
     def subtitle_thread():
         with app.app_context():
             audio_path = "apps/aieditor/func/voice/"
             clip_path = "apps/aieditor/func/clip/"
 
+            # 자막파일 생성 함수
             make_subtitle(audio_path, clip_path, script_list)
 
-    # voice, image를 생성한 후
+    # 앞서 생성한 스레드 함수들이 차례대로 돌아갈 수 있도록 작성
     def thread_start():
         global video_generation_complete
         global bgm_option, step_now, model_option, sub_option
@@ -400,23 +408,29 @@ def video():
                         ),
                     )
 
+                # image 스레드 시작
                 start_image.start()
                 start_image.join()
                 step_now += 1
 
+                # image 생성 종료 이후 video 스레드 시작
                 start_video = threading.Thread(target=start_video_thread)
                 start_video.start()
                 start_video.join()
 
+                # video 생성이 끝난 후 자막 파일 생성함
                 start_subtitle = threading.Thread(target=subtitle_thread)
                 start_subtitle.start()
                 start_subtitle.join()
 
+                # bgm 옵션을 선택했을 때, 비디오에 bgm을 합성하는 스레드 시작
                 if bgm_option == "yes":
                     start_bgm = threading.Thread(target=bgm_thread)
                     start_bgm.start()
                     start_bgm.join()
 
+                # 위 과정이 전부 완료되고 나면 video_generation_complete 변수에 True를 할당
+                # socket을 사용하여 /video 서버에 요청을 보냄
                 video_generation_complete = True
                 socketio.emit("video_generation_complete", namespace="/video")
 
@@ -430,17 +444,31 @@ def video():
     thread = threading.Thread(target=thread_start)
     thread.start()
 
-    # video.html 화면 띄우기
+    # 스레드가 시작되면 video.html 화면 띄우기
     return render_template("video.html")
 
 
 @app.route("/download_video", methods=["GET", "POST"], endpoint="download_video")
 def download_video():
-    return render_template(
-        "download.html", filename="final_video.mp4", subtitle="sample.srt"
+    """
+    /download_video에 return 하고싶은 비디오를 render_template을 사용하여 띄웁니다.
+    bgm 옵션에 따라 최종 영상의 이름이 달라지기 때문에 그것을 고려하여
+    output_path에 final_video가 있으면 final_video를,
+    없으면 그 이전 단계인 merge_video를 보냅니다.
+
+    """
+    video_path = (
+        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
     )
+    file = "final_video.mp4"
+    if os.path.exists(os.path.join(video_path, file)):
+        filename = "final_video.mp4"
+    else:
+        filename = "merge_video.mp4"
+    return render_template("download.html", filename=filename, subtitle="sample.srt")
 
 
+# subtitle과 video 다운로드를 위한 코드
 @app.route("/download/<filename>")
 def download(filename):
     finalclip_folder_path = "func\\finalclip\\"
