@@ -197,13 +197,13 @@ class ScriptAssistant:
         )  # stream을 위해 output_parser 추가
 
     def translate2en(self, text):
-        """BGM 생성에 메인 주제를 영어로 입력하기 위한 번역 함수
+        """LLM을 사용하여 한글을 영어로 번역하는 함수. Gemini로 번역을 수행합니다.
 
         Args:
-            text (str): 사용자가 입력한 주제
+            text (str): 한글
 
         Returns:
-            str: 영어로 번역된 주제
+            str: 영어
         """
         self.translate2en_prompt = ChatPromptTemplate.from_template(
             """Translate "{text}" to English."""

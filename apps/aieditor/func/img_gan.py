@@ -26,6 +26,19 @@ def pil_draw_label(
     max_line_length=65,
     bottom_margin=50,
 ):
+    """이미지에 자막을 넣는 함수입니다.
+
+    Args:
+        image (Image): 이미지 객체
+        text (str): 이미지에 들어갈 자막 문자열
+        font_color (tuple, optional): 자막의 글씨 색깔. Defaults to (255, 255, 255).
+        font_size (int, optional): 자막의 글씨 크기. Defaults to 32.
+        max_line_length (int, optional): 자막의 최대 가로 길이. 자막의 가로 길이가 이미지의 가로 길이보다 크면 자막이 잘림. Defaults to 65.
+        bottom_margin (int, optional): 자막의 위치. 이미지 하단에서 얼마나 떨어져있는지를 정하는 변수. Defaults to 50.
+
+    Returns:
+        Image: 자막이 합성된 이미지
+    """
     width, height = image.size
     draw = ImageDraw.Draw(image, "RGBA")
     if platform.system() == "Darwin":  # 맥
@@ -115,6 +128,11 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
     size = "1792x1024"  # dalle3
     # size = "1024x1792" # dalle3
 
+    # 응답 상태 코드가 200 OK 인지 확인합니다.
+    output_folder = "apps/aieditor/func/images"
+    # output_folder가 없으면 만듦
+    os.makedirs(output_folder, exist_ok=True)
+
     # Generation start
     if progress_callback:
         progress_callback("이미지 생성 중", 0)
@@ -134,12 +152,7 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
         # stream=True 옵션을 사용하여 서버로부터 데이터를 바로 파일로 저장할 수 있도록 합니다.
         response = requests.get(image_url, stream=True)
 
-        # 응답 상태 코드가 200 OK 인지 확인합니다.
-        output_folder = "apps/aieditor/func/images"
         output_path = os.path.join(output_folder, f"{idx+1:0>3}.jpg")
-
-        # output_folder가 없으면 만듦
-        os.makedirs(output_folder, exist_ok=True)
 
         if not with_sub:  # 자막 없는 이미지
             # 바이너리 쓰기 모드(b)로 파일을 열고 이미지 데이터를 기록합니다.
@@ -182,11 +195,20 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
 
 # sdxl turbo로 이미지 생성하는 함수
 def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
+    """
+    stable diffusion sdxlturb 모델로 이미지를 생성하는 함수,
+    인수 img_gan_prompt 함수로 생성한 prompts : list
+    실행되는 곳에 ./images 폴더가 있어야함, 파일명은 1번 부터 list의 길이 만큼
+    """
     # 파이프 라인 만들기(sdxl turbo 모델 가져오기)
     pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo")
 
     width = 1280
     height = 720
+
+    output_folder = "apps/aieditor/func/images"
+    # output_folder가 없으면 만듦
+    os.makedirs(output_folder, exist_ok=True)
 
     # Generation start
     if progress_callback:
@@ -206,11 +228,7 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
         if not isinstance(image, Image.Image):
             image = Image.fromarray(image)
 
-        output_folder = "apps/aieditor/func/images"
         output_path = os.path.join(output_folder, f"{idx+1:0>3}.jpg")
-
-        # output_folder가 없으면 만듦
-        os.makedirs(output_folder, exist_ok=True)
 
         if not with_sub:  # 자막 없는 이미지
             # 이미지 저장

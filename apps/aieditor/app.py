@@ -7,6 +7,7 @@ from apps.aieditor.func.split_script import ScriptSplitter
 import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
+from apps.aieditor.func.naver import voice_gan_naver
 from apps.aieditor.func.video_edit import (
     add_static_image_to_video,
     backgroundmusic,
@@ -267,9 +268,7 @@ def script():
 # 특정 경로에 저장된 이미지 파일을 로드하기 위한 엔드포인트 추가
 @app.route("/func_images/<path:filename>")
 def func_images(filename):
-    image_folder_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-    )
+    image_folder_path = "func\\images\\"
     return send_from_directory(image_folder_path, filename)
 
 
@@ -335,16 +334,14 @@ def video():
         global step_now
 
         with app.app_context():
-            image_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/images/"
-            )
-            audio_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
-            )
-            clip_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
-            )
-            output_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
+            image_path = "apps/aieditor/func/images/"
+            audio_path = "apps/aieditor/func/voice/"
+            clip_path = "apps/aieditor/func/clip/"
+            output_path = "apps/aieditor/func/finalclip/"
+
+            # path가 없으면 만듦
+            os.makedirs(clip_path, exist_ok=True)
+            os.makedirs(output_path, exist_ok=True)
 
             add_static_image_to_video(
                 image_path,
@@ -358,18 +355,14 @@ def video():
 
     def bgm_thread():
         with app.app_context():
-            video_path = "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
-            bgm_path = f"C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
+            video_path = "apps/aieditor/func/finalclip/"
+            bgm_path = f"apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
             backgroundmusic(video_path, bgm_path)
 
     def subtitle_thread():
         with app.app_context():
-            audio_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/voice/"
-            )
-            clip_path = (
-                "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/clip/"
-            )
+            audio_path = "apps/aieditor/func/voice/"
+            clip_path = "apps/aieditor/func/clip/"
 
             make_subtitle(audio_path, clip_path, script_list)
 
@@ -380,6 +373,7 @@ def video():
         with app.app_context():
             try:
                 voice_gan_wavenet(script_list, progress_callback=progress_callback)
+                # voice_gan_naver(script_list, progress_callback=progress_callback)
                 step_now += 1
 
                 # image_with_sub 사용자 선택 여부에 따라 바뀜
@@ -449,17 +443,13 @@ def download_video():
 
 @app.route("/download/<filename>")
 def download(filename):
-    finalclip_folder_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
-    )
+    finalclip_folder_path = "func\\finalclip\\"
     return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
 
 
 @app.route("/download_sb", methods=["GET"])
 def download_sb():
-    sb_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/sample.srt"
-    )
+    sb_path = "func\\sub.srt"
     return send_file(sb_path, as_attachment=True)
 
 
