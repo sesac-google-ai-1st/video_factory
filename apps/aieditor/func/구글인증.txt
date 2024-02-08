@@ -1,0 +1,16 @@
+pip install google-cloud-texttospeech
+
+gcloud config set project [YOUR_PROJECT_ID]
+
+gcloud config get-value project
+
+gcloud components update
+
+현재 로컬 컴퓨터에 GCP셋팅 파일중에 deafult로 설정파일을 사용
+gcloud auth application-default login
+
+default설정에서 사용하고 있는 프로젝트명을 변경
+
+gcloud auth application-default set-quota-project [YOUR_PROJECT_ID]
+
+gcp -> API/서비스 세부 정보 -> 클라우드 텍스트 음성 변환 API를 enable 상태로 바꾸기

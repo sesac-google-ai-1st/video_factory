@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Dongle:wght@700&family=Gowun+Dodum&display=swap');
+
+* {
+  font-family: 'Gowun Dodum';
+}
+
+/* 기본 스타일 설정 */
+body {
+  margin: 100px 0;
+  padding: 0;
+  /* background-image: url('/static/images/background.png'); */
+  background-size: cover; /* 이미지가 전체 화면을 덮도록 설정 */
+  background-position: center; /* 이미지가 중앙에 오도록 설정 */
+  background-repeat: no-repeat; /* 이미지가 반복되지 않도록 설정 */
+  background-color: #141212;
+  color: #dadada;
+  line-height: 1.2;
+}
+
+/* 메인 헤더 스타일 */
+.main-header {
+  text-align: center;
+  padding: 20px 0;
+  background-color: #141212;
+  color: rgb(255, 255, 255);
+}
+
+.main-header h1 {
+  color: #ffffff;
+  margin: 0;
+  font-size: 30px;
+}
+
+.loading span {
+  display: inline-block;
+  margin: 0 -.05em;
+  animation: loading .9s infinite alternate;
+  font-size: x-large;
+}
+.loading span:nth-child(2) {
+  font-size: x-large;
+  animation-delay: .1s;
+}
+.loading span:nth-child(3) {
+  font-size: x-large;
+  animation-delay: .2s;
+}
+.loading span:nth-child(4) {
+  font-size: x-large;
+  animation-delay: .3s;
+}
+.loading span:nth-child(5) {
+  font-size: x-large;
+  animation-delay: .4s;
+}
+.loading span:nth-child(6) {
+  font-size: x-large;
+  animation-delay: .5s;
+}
+.loading span:nth-child(7) {
+  font-size: x-large;
+  animation-delay: .6s;
+}
+.loading span:nth-child(8) {
+  font-size: x-large;
+  animation-delay: .7s;
+}
+.loading span:nth-child(9) {
+  font-size: x-large;
+  animation-delay: .8s;
+}
+.loading span:nth-child(10) {
+  font-size: x-large;
+  animation-delay: .9s;
+}
+.loading span:nth-child(11) {
+  font-size: x-large;
+  animation-delay: .10s;
+}
+.loading span:nth-child(12) {
+  font-size: x-large;
+  animation-delay: .11s;
+}
+
+@keyframes loading {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
+
+.container {
+  margin: 100px auto;
+  width: 500px;
+  text-align: center;
+}
+  
+.progress {
+  padding: 6px;
+  border-radius: 30px;
+  background: rgba(0, 0, 0, 0.25);  
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25), 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.progress-bar {
+  height: 18px;
+  border-radius: 30px;
+  background-image: 
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
+  transition: 0.2s linear;  
+  transition-property: width, background-color;    
+}
+
+.progress-moved .progress-bar {
+  width: 100%; 
+  background-color: #477cef;  
+}
+
+@keyframes progressAnimation {
+  0%   { width: 0%; background-color: #bce6f9;}
+  100% { width: 100%; background-color: #4782ef; }
+}
+
+$green: #4cd964;
+$turquoise: #5ac8fa;
+$blue: #007aff;
+$light-blue: #7DC8E8;
+$purple: #5856d6;
+$red: #ff2d55;
+
+@keyframes colorAnimation {
+  0% { 
+    background-image: 
+    linear-gradient(to right, $green, $turquoise, $blue, $light-blue, $purple, $red);
+  }
+  20% { 
+    background-image: 
+    linear-gradient(to right, $turquoise, $blue, $light-blue, $purple, $red, $green);
+  }
+  40% { 
+    background-image: 
+    linear-gradient(to right, $blue, $light-blue, $purple, $red, $green, $turquoise);
+  }
+  60% { 
+    background-image: 
+    linear-gradient(to right, $light-blue, $purple, $red, $green, $turquoise, $blue);
+  }
+  100% { 
+    background-image: 
+    linear-gradient(to right, $purple, $red, $green, $turquoise, $blue, $light-blue);
+  }
+}
+
+#image-container {
+  display: flex;
+  flex-wrap: wrap;
+  /* justify-content: center; */
+  align-items: flex-start; /* Align items to the start (top) */
+  padding: 0 3%; /* 3% padding on both left and right */
+  overflow-y: auto; /* Enable vertical scrolling when content overflows */
+  max-height: 100vh; /* Set a maximum height equal to the viewport height */
+
+}
+
+.generated_image {
+  margin: 5px; 
+  max-width: 100%;
+}
+
+#progress-step {
+  float: right;
+}

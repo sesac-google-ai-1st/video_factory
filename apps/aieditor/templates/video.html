@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>영상 생성기</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/video.css') }}">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    </head>
+    <body>
+        <header class="main-header">
+            <h1>영상 생성중</h1><br>
+            <div class="loading">
+                <span>잠</span>
+                <span>시</span>
+                <span>만</span>
+                <span>&nbsp;</span>
+                <span>기</span>
+                <span>다</span>
+                <span>려</span>
+                <span>주</span>
+                <span>세</span>
+                <span>요</span>
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+            </div>
+        </header>
+        
+        <div class="container">
+            <div id="progress-description" class="progress-text"></div>
+            <div class="progress progress-moved">
+                <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0;"></div>
+            </div>
+            <div id="progress-text" class="progress-text">0%</div><span id="progress-step">STEP 0 / 3</span>
+        </div>
+
+        <div id="image-container">
+            <!-- generated_image가 표시되는 영역입니다. -->
+        </div>
+        <script src="{{ url_for('static', filename='js/video_script.js') }}"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</body>
+</html>
+
