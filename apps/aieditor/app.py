@@ -94,12 +94,20 @@ def main():
                             user_input
                         )
                         session["user_input_en"] = user_input_en
+                        bgm_path = "apps/aieditor/static/audio/"
 
-                        print("===== BGM 생성을 시작합니다. =====")
-                        bgm_thread = threading.Thread(
-                            target=music_gen_instance.make_bgm, args=(user_input_en,)
-                        )
-                        bgm_thread.start()
+                        if os.path.exists(
+                            os.path.join(bgm_path, f"musicgen_{user_input_en}.wav")
+                        ):
+                            print("===== BGM이 이미 존재합니다. =====")
+
+                        else:
+                            print("===== BGM 생성을 시작합니다. =====")
+                            bgm_thread = threading.Thread(
+                                target=music_gen_instance.make_bgm,
+                                args=(user_input_en,),
+                            )
+                            bgm_thread.start()
 
             # "대본 상세 구성하기"이 클릭된 경우
             elif "sub-button" in request.form:
