@@ -30,25 +30,13 @@ api_key = ""
 imgPath = os.path.join("static", "image")
 app.config["IMAGE_FOLDER"] = imgPath
 
-# 필요 옵션들 변수 선언하기
-main_topics = []
-subtopics = []
-script_assistant_instance = None
-music_gen_instance = musicGen()
-bgm_option = "no"
-model_option = "stableDiffusion"
-sub_option = True
-video_generation_complete = False
-
 
 @app.route("/", methods=["GET", "POST"])
 def main():
-    global main_topics
-    global script_assistant_instance
-    global music_gen_instance
-
-    # 사용자 입력을 저장할 변수 초기화
-    user_input = ""
+    user_input = session.get("user_input", "")
+    main_topics = session.get("main_topics", [])
+    script_assistant_instance = None
+    music_gen_instance = musicGen()
 
     # subtopic-form을 보여줄지 여부를 저장하는 변수
     show_subtopic_form = False
@@ -85,6 +73,7 @@ def main():
                         main_topics = script_assistant_instance.make_maintopic(
                             user_input
                         )
+                        session["main_topics"] = main_topics
                         show_subtopic_form = True
 
                     # musicGen 인스턴스가 생성되어 있는 경우, 병렬로 배경음악 생성 시작
@@ -119,29 +108,29 @@ def main():
                     flash("🚨 메인 주제들 중 하나를 선택해주세요❗", "error")
                     show_subtopic_form = True
                 else:
-                    if script_assistant_instance:
-                        selected_maintopic_en = script_assistant_instance.translate2en(
-                            selected_maintopic
+                    script_assistant_instance = ScriptAssistant(selected_model)
+                    selected_maintopic_en = script_assistant_instance.translate2en(
+                        selected_maintopic
+                    )
+                    session["selected_maintopic_en"] = selected_maintopic_en
+
+                    # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
+                    en_subtopics, ko_subtopics = (
+                        script_assistant_instance.make_subtopics(
+                            session.get("user_input_en", user_input),
+                            selected_maintopic_en,
                         )
-                        session["selected_maintopic_en"] = selected_maintopic_en
+                    )
 
-                        # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
-                        en_subtopics, ko_subtopics = (
-                            script_assistant_instance.make_subtopics(
-                                session.get("user_input_en", user_input),
-                                selected_maintopic_en,
-                            )
-                        )
+                    # session에 데이터 저장
+                    session["user_input"] = user_input
+                    session["selected_model"] = selected_model
+                    session["selected_maintopic"] = selected_maintopic
+                    session["ko_subtopics"] = ko_subtopics
+                    session["en_subtopics"] = en_subtopics
 
-                        # session에 데이터 저장
-                        session["user_input"] = user_input
-                        session["selected_model"] = selected_model
-                        session["selected_maintopic"] = selected_maintopic
-                        session["ko_subtopics"] = ko_subtopics
-                        session["en_subtopics"] = en_subtopics
-
-                        # script.html 페이지로 리다이렉트
-                        return redirect(url_for("script"))
+                    # script.html 페이지로 리다이렉트
+                    return redirect(url_for("script"))
 
     return render_template(
         "main.html",
@@ -154,10 +143,6 @@ def main():
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
-    global bgm_option
-    global model_option
-    global sub_option
-
     # session에 저장된 데이터 불러오기
     user_input = session.get("user_input", "")
     user_input_en = session.get("user_input_en", "")
@@ -166,6 +151,9 @@ def script():
     selected_maintopic_en = session.get("selected_maintopic_en", "")
     ko_subtopics = session.get("ko_subtopics", "")
     en_subtopics = session.get("en_subtopics", "")
+    bgm_option = session.get("bgm_option", "no")
+    model_option = session.get("model_option", "stableDiffusion")
+    sub_option = session.get("sub_option", True)
 
     script_assistant_instance = ScriptAssistant(selected_model)
 
@@ -181,16 +169,19 @@ def script():
         # 배경음악을 선택한 경우
         if "backgroundmusic" in request.json:
             bgm_option = request.json["backgroundmusic"]
+            session["bgm_option"] = bgm_option
             print("BGM 선택!!!", bgm_option)
 
         # image model 선택 옵션
         elif "imageModel" in request.json:
             model_option = request.json["imageModel"]
+            session["model_option"] = model_option
             print("Model 선택", model_option)
 
         # 자막 옵션을 선택한 경우
         elif "isChecked" in request.json:
             sub_option = request.json["isChecked"]
+            session["sub_option"] = sub_option
             print("자막 옵션:", sub_option)
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
@@ -257,11 +248,12 @@ def script():
             script_data = request.json.get("scriptData")
             session["script_data"] = script_data
 
-            # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
+            # video.html 페이지로 리다이렉트 - flask에서 안 돼서 js에서 함ㅠ
             # return redirect(url_for("video"))
 
     # print("BGM 기본값:", bgm_option)
     # print("model: ", model_option)
+    print(bgm_option, model_option, sub_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
@@ -273,6 +265,9 @@ def script():
         selected_maintopic=selected_maintopic,
         subtopics=ko_subtopics,
         user_input_en=user_input_en,
+        bgm_option=bgm_option,
+        model_option=model_option,
+        sub_option=sub_option,
     )
 
 
@@ -291,21 +286,17 @@ def handle_video_generation_complete():
     emit("video_generation_complete", namespace="/video", broadcast=True)
 
 
-step_now = 1
-step_total = 3
-
-
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
-    global step_now, model_option
-
-    step_now = 1
-
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
     maintheme_ko = session.get("selected_maintopic", "")
     maintheme_en = session.get("selected_maintopic_en", "")
     bgm_name = session.get("user_input_en", "")
+    bgm_option = session.get("bgm_option", "no")
+    model_option = session.get("model_option", "stableDiffusion")
+    sub_option = session.get("sub_option", True)
+    print(bgm_option, model_option, sub_option)
 
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
@@ -325,9 +316,9 @@ def video():
         stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
         print(stable_diffusion_prompts)
 
-    def progress_callback(description, progress, image_url=None):
-        global step_now, step_total
-
+    def progress_callback(
+        description, progress, step_now=0, step_total=3, image_url=None
+    ):
         print(description, progress)
         socketio.emit(
             "progress_update",
@@ -342,7 +333,6 @@ def video():
 
     # 비디오 생성 스레드 만들기
     def start_video_thread():
-        global step_now
         with app.app_context():
             image_path = "apps/aieditor/func/images/"
             audio_path = "apps/aieditor/func/voice/"
@@ -361,8 +351,6 @@ def video():
                 output_path,
                 progress_callback=progress_callback,
             )
-
-        step_now += 1
 
     # backgroundmusic 생성을 위한 스레드
     def bgm_thread():
@@ -383,14 +371,11 @@ def video():
             make_subtitle(audio_path, clip_path, script_list)
 
     # 앞서 생성한 스레드 함수들이 차례대로 돌아갈 수 있도록 작성
-    def thread_start():
-        global video_generation_complete
-        global bgm_option, step_now, model_option, sub_option
+    def thread_start(bgm_option, model_option, sub_option):
         with app.app_context():
             try:
                 voice_gan_wavenet(script_list, progress_callback=progress_callback)
                 # voice_gan_naver(script_list, progress_callback=progress_callback)
-                step_now += 1
 
                 # image_with_sub 사용자 선택 여부에 따라 바뀜
                 image_with_sub = sub_option
@@ -419,7 +404,6 @@ def video():
                 # image 스레드 시작
                 start_image.start()
                 start_image.join()
-                step_now += 1
 
                 # image 생성 종료 이후 video 스레드 시작
                 start_video = threading.Thread(target=start_video_thread)
@@ -437,9 +421,7 @@ def video():
                     start_bgm.start()
                     start_bgm.join()
 
-                # 위 과정이 전부 완료되고 나면 video_generation_complete 변수에 True를 할당
-                # socket을 사용하여 /video 서버에 요청을 보냄
-                video_generation_complete = True
+                # 위 과정이 전부 완료되고 나면 socket을 사용하여 /video 서버에 요청을 보냄
                 socketio.emit("video_generation_complete", namespace="/video")
 
                 # 비디오 생성이 완료되면 download_video로 리다이렉트
@@ -449,7 +431,9 @@ def video():
                 print(f"Error: {e}")
 
     # 앞선 함수들 전부 실행하는 스레드 시작
-    thread = threading.Thread(target=thread_start)
+    thread = threading.Thread(
+        target=thread_start, args=(bgm_option, model_option, sub_option)
+    )
     thread.start()
 
     # 스레드가 시작되면 video.html 화면 띄우기

@@ -29,7 +29,7 @@ def voice_gan_wavenet(sentences, progress_callback=None):
 
     # Generation start
     if progress_callback:
-        progress_callback("나레이션 생성 중", 0)
+        progress_callback("나레이션 생성 중", 0, step_now=1)
 
     # 파일 저장을 위한 반복문
     for i, sentence in enumerate(sentences, start=1):
@@ -50,8 +50,10 @@ def voice_gan_wavenet(sentences, progress_callback=None):
 
         # Update progress after each sentence
         if progress_callback:
-            progress_callback("나레이션 생성 중", round((i / len(sentences)) * 100))
+            progress_callback(
+                "나레이션 생성 중", round((i / len(sentences)) * 100), step_now=1
+            )
 
     # Generation is complete
     if progress_callback:
-        progress_callback("나레이션 생성 완료", 100)
+        progress_callback("나레이션 생성 완료", 100, step_now=1)

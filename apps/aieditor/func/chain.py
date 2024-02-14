@@ -1,4 +1,4 @@
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from langchain.chains import LLMChain
@@ -34,8 +34,6 @@ class ScriptAssistant:
         # sub topic 생성하는 프롬프트
         # input: youtube_topic, main_topic
         self.subtopics_prompt = """
-        If my requirements below are in a language other than English, please translate it into English, think about it, and answer in English.
-
         I am planning to run a YouTube channel about <{youtube_topic}>.
         I'm looking to create a chronological content series about <{youtube_topic}>
 
