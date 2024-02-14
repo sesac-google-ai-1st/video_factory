@@ -10,3 +10,7 @@ mutagen==1.47.0
 moviepy==1.0.3
 google-cloud-texttospeech==2.15.1
 accelerate==0.26.1
+-U langchain-community==0.0.20
+openai==1.12.0
+diffusers==0.26.3
+
