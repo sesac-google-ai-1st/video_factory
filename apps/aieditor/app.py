@@ -290,9 +290,7 @@ def script():
 # 특정 경로에 저장된 이미지 파일을 로드하기 위한 엔드포인트 추가
 @app.route("/show_images/<path:filename>")
 def show_images(filename):
-    image_folder_path = os.path.join(
-        "apps", "aieditor", get_user_storage_path(), "images"
-    )
+    image_folder_path = os.path.join(get_user_storage_path(), "images")
     return send_from_directory(image_folder_path, filename)
 
 
@@ -476,7 +474,7 @@ def download_video():
     없으면 그 이전 단계인 merge_video를 보냅니다.
 
     """
-    video_path = os.path.join("apps", "aieditor", get_user_storage_path(), "finalclip")
+    video_path = os.path.join(get_user_storage_path(), "finalclip")
     file = "final_video.mp4"
     if os.path.exists(os.path.join(video_path, file)):
         filename = "final_video.mp4"
@@ -492,15 +490,13 @@ def download_video():
 # subtitle과 video 다운로드를 위한 코드
 @app.route("/download/<path:filename>")
 def download(filename):
-    finalclip_folder_path = os.path.join(
-        "apps", "aieditor", get_user_storage_path(), "finalclip"
-    )
+    finalclip_folder_path = os.path.join(get_user_storage_path(), "finalclip")
     return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
 
 
 @app.route("/download_sub", methods=["GET"])
 def download_sub():
-    sub_path = os.path.join("apps", "aieditor", get_user_storage_path(), "sub.srt")
+    sub_path = os.path.join(get_user_storage_path(), "sub.srt")
     return send_file(sub_path, as_attachment=True)
 
 
