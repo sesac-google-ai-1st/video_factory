@@ -14,7 +14,7 @@ def voice_gan_naver(sentences, progress_callback=None):
 
     # Generation start
     if progress_callback:
-        progress_callback("나레이션 생성 중", 0)
+        progress_callback("나레이션 생성 중", 0, step_now=1)
 
     # 파일 저장을 위한 반복문
     for i, sentence in enumerate(sentences, start=1):
@@ -47,11 +47,13 @@ def voice_gan_naver(sentences, progress_callback=None):
                 print(f"naver 오디오 파일이 '{output_path}'에 저장되었습니다.")
             # Update progress after each sentence
             if progress_callback:
-                progress_callback("나레이션 생성 중", round((i / len(sentences)) * 100))
+                progress_callback(
+                    "나레이션 생성 중", round((i / len(sentences)) * 100), step_now=1
+                )
 
         else:
             print("Error Code:" + rescode)  # 오류 발생 시 오류 코드 출력
 
     # Generation is complete
     if progress_callback:
-        progress_callback("나레이션 생성 완료", 100)
+        progress_callback("나레이션 생성 완료", 100, step_now=1)

@@ -105,8 +105,7 @@ def img_gan_prompt(lang, maintheme, scripts):
         for prompt in scripts:
             prompts.append(
                 f"""Draw an image (scene) that matches the theme of the video. Video theme: "{maintheme}"
-                Requested image: {prompt}
-                Attention!!! Draw an image that matches the theme of the video ({maintheme})."""
+                Requested image: {prompt}"""
             )
         return prompts
 
@@ -135,7 +134,7 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
 
     # Generation start
     if progress_callback:
-        progress_callback("이미지 생성 중", 0)
+        progress_callback("이미지 생성 중", 0, step_now=2)
 
     for idx, prompt in enumerate(prompts):
         response = client.images.generate(
@@ -166,7 +165,8 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
                 progress_callback(
                     "이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    step_now=2,
                 )
 
         elif with_sub:  # 자막 있는 이미지
@@ -185,12 +185,13 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
                 progress_callback(
                     "자막이 합성된 이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    step_now=2,
                 )
 
     # Generation is complete
     if progress_callback:
-        progress_callback("이미지 생성 완료", 100)
+        progress_callback("이미지 생성 완료", 100, step_now=2)
 
 
 # sdxl turbo로 이미지 생성하는 함수
@@ -212,7 +213,7 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
 
     # Generation start
     if progress_callback:
-        progress_callback("이미지 생성 중", 0)
+        progress_callback("이미지 생성 중", 0, step_now=2)
 
     # 이미지 생성(프롬프트 입력, 추론 스텝 1, 프롬프트 충실도 0)
     for idx, prompt in enumerate(prompts):
@@ -240,7 +241,8 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
                 progress_callback(
                     "이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    step_now=2,
                 )
 
         elif with_sub:  # 자막 있는 이미지
@@ -265,9 +267,10 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
                 progress_callback(
                     "자막이 합성된 이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    step_now=2,
                 )
 
     # Generation is complete
     if progress_callback:
-        progress_callback("이미지 생성 완료", 100)
+        progress_callback("이미지 생성 완료", 100, step_now=2)

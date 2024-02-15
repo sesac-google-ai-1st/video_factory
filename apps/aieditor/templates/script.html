@@ -71,9 +71,9 @@
                             브라우저가 오디오를 지원하지 않습니다. 
                         </audio><br>
                         <div class="radio" style="margin-top: 20px;">
-                            <input type="radio" id="use-bgm" name="backgroundmusic" value="yes" onclick="useornotBgm(this)"/>
+                            <input type="radio" id="use-bgm" name="backgroundmusic" value="yes" onclick="useornotBgm(this)" {% if bgm_option == 'yes' %} checked {% endif %}/>
                             <label for="use-bgm">배경음악 사용하기</label>
-                            <input type="radio" id="unuse-bgm" name="backgroundmusic" value="no" onclick="useornotBgm(this)" />
+                            <input type="radio" id="unuse-bgm" name="backgroundmusic" value="no" onclick="useornotBgm(this)" {% if bgm_option == 'no' %} checked {% endif %}/>
                             <label for="unuse-bgm">배경음악 없이 동영상 생성</label>
                         </div>
                         <button class="close_button" onclick="closeBgmModal(event)">✕</button>
@@ -85,7 +85,7 @@
                         <div style="display: flex; margin-top: 40px; margin-left: 20px; justify-content: space-between;">
                             예시 문장 : "커피 원두가 들어 있는 커피 체리는 몇 달에 걸쳐 익습니다."
                             <div title="선택과 관련 없이 자막파일은 제공됩니다." class="subtitle-check" id="subCheck" style="margin-right: 30px; justify-content: flex-end;">
-                                <input type="checkbox" id="subtitle" name="subtitle" checked/>
+                                <input type="checkbox" id="subtitle" name="subtitle" {% if sub_option  == True %} checked {% endif %}/>
                                 <label for="subtitle">자막 표시</label>
                             </div>
                         </div>
@@ -94,7 +94,7 @@
                                 <div class="modelImage" style="margin-right: 20px;">
                                     <img id="imageStable" src="{{ stable_img }}" alt="SD", width="448" height="256" onclick="selectImage('stableDiffusion')">
                                     <div style="display: flex; margin-top: 20px;">
-                                        <input type="radio" id="stableDiffusion" name="imageModel" value="stableDiffusion" checked onclick="imageModel(this)"/>
+                                        <input type="radio" id="stableDiffusion" name="imageModel" value="stableDiffusion" onclick="imageModel(this)" {% if model_option == 'stableDiffusion' %} checked {% endif %}/>
                                         <label for="stableDiffusion">Stable Diffusion</label>
                                         <div title="시간 다소 소요" style="cursor: pointer;">&nbsp;&nbsp;💬</div>
                                     </div>
@@ -102,7 +102,7 @@
                                 <div class="modelImage">
                                     <img id="imageDalle" src="{{ dalle_img }}" alt="SD", width="448" height="256" onclick="selectImage('dalle3')">
                                     <div style="display: flex; margin-top: 20px; cursor: pointer;">
-                                        <input type="radio" id="dalle3" name="imageModel" value="dalle3" onclick="imageModel(this)" />
+                                        <input type="radio" id="dalle3" name="imageModel" value="dalle3" onclick="imageModel(this)" {% if model_option == 'dalle3' %} checked {% endif %}/>
                                         <label for="dalle3">dall-e-3</label>
                                         <div title="유료" style="cursor: pointer;">&nbsp;&nbsp;💬</div>
                                     </div>
