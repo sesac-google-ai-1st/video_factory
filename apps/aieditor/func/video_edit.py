@@ -27,7 +27,7 @@ def add_static_image_to_video(
 
     # Generation start
     if progress_callback:
-        progress_callback("비디오 생성 중", 0)
+        progress_callback("비디오 생성 중", 0, step_now=3)
 
     for i, (image_file, audio_file) in enumerate(zip(image_files, audio_files)):
         # 오디오 파일 로드
@@ -45,7 +45,7 @@ def add_static_image_to_video(
 
         if progress_callback:
             progress_callback(
-                "비디오 생성 중", round(((i + 1) / len(audio_files)) * 50)
+                "비디오 생성 중", round(((i + 1) / len(audio_files)) * 50), step_now=3
             )
 
     # clip_path 폴더에서 파일 목록을 가져옴
@@ -66,7 +66,9 @@ def add_static_image_to_video(
 
         if progress_callback:
             progress_callback(
-                "비디오 합치는 중", round(((i + 1) / len(audio_files)) * 50) + 50
+                "비디오 합치는 중",
+                round(((i + 1) / len(audio_files)) * 50) + 50,
+                step_now=3,
             )
 
         # # 트랜지션 결과 파일명 생성
@@ -98,11 +100,11 @@ def add_static_image_to_video(
     final_clip.write_videofile(output_path + "merge_video.mp4", fps=24)
 
     if progress_callback:
-        progress_callback("비디오 생성 완료", 100)
+        progress_callback("비디오 생성 완료", 100, step_now=3)
 
 
 # 자막 파일 생성하기
-def make_subtitle(audio_path, video_path, txt_list):
+def make_subtitle(audio_path, video_path, sub_path, txt_list):
     """_summary_
     audio 파일과 video 파일을 대조하여 video 길이를 측정,
     자막을 list 형태로 전달하면 트랜지션 시간을 제외한 video가 나오는 부분에만 자막을 생성할 수 있도록 합니다.
@@ -114,7 +116,8 @@ def make_subtitle(audio_path, video_path, txt_list):
         video_path (str): video 파일이 들어있는 폴더를 지정합니다.
         txt_list (list): 자막에 들어갈 텍스트를 리스트 형태로 받습니다.
     """
-    srt = open("apps/aieditor/func/sub.srt", "w+", encoding="utf-8")
+    sub_path = os.path.join(sub_path, "sub.srt")
+    srt = open(sub_path, "w+", encoding="utf-8")
 
     # empty list 생성
     second_list = []

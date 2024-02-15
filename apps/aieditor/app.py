@@ -1,4 +1,6 @@
 import os
+import uuid
+
 from flask import Flask, render_template, send_from_directory, send_file
 from flask import request, Response, url_for, redirect, session, flash
 from flask_socketio import SocketIO, emit
@@ -8,14 +10,13 @@ import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
 from apps.aieditor.func.naver import voice_gan_naver
+from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3, img_gen_sdxlturb
 from apps.aieditor.func.video_edit import (
     add_static_image_to_video,
     backgroundmusic,
     make_subtitle,
 )
-from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3, img_gen_sdxlturb
 
-from flask import jsonify, send_from_directory
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -30,25 +31,28 @@ api_key = ""
 imgPath = os.path.join("static", "image")
 app.config["IMAGE_FOLDER"] = imgPath
 
-# 필요 옵션들 변수 선언하기
-main_topics = []
-subtopics = []
-script_assistant_instance = None
-music_gen_instance = musicGen()
-bgm_option = "no"
-model_option = "stableDiffusion"
-sub_option = True
-video_generation_complete = False
+
+@app.before_request
+def before_request():
+    # 세션에 사용자 ID가 없는 경우 새로운 ID 생성
+    if "user_id" not in session:
+        session["user_id"] = str(uuid.uuid4())  # 사용자 고유한 ID 생성
+    print("user_id:", session.get("user_id"))
+
+
+def get_user_storage_path():
+    # 사용자별 저장 경로를 생성하여 반환
+    user_path = os.path.join("generated", session["user_id"])
+    print("user_경로:", user_path)
+    return user_path
 
 
 @app.route("/", methods=["GET", "POST"])
 def main():
-    global main_topics
-    global script_assistant_instance
-    global music_gen_instance
-
-    # 사용자 입력을 저장할 변수 초기화
-    user_input = ""
+    user_input = session.get("user_input", "")
+    main_topics = session.get("main_topics", [])
+    script_assistant_instance = None
+    music_gen_instance = musicGen()
 
     # subtopic-form을 보여줄지 여부를 저장하는 변수
     show_subtopic_form = False
@@ -85,6 +89,7 @@ def main():
                         main_topics = script_assistant_instance.make_maintopic(
                             user_input
                         )
+                        session["main_topics"] = main_topics
                         show_subtopic_form = True
 
                     # musicGen 인스턴스가 생성되어 있는 경우, 병렬로 배경음악 생성 시작
@@ -119,29 +124,29 @@ def main():
                     flash("🚨 메인 주제들 중 하나를 선택해주세요❗", "error")
                     show_subtopic_form = True
                 else:
-                    if script_assistant_instance:
-                        selected_maintopic_en = script_assistant_instance.translate2en(
-                            selected_maintopic
+                    script_assistant_instance = ScriptAssistant(selected_model)
+                    selected_maintopic_en = script_assistant_instance.translate2en(
+                        selected_maintopic
+                    )
+                    session["selected_maintopic_en"] = selected_maintopic_en
+
+                    # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
+                    en_subtopics, ko_subtopics = (
+                        script_assistant_instance.make_subtopics(
+                            session.get("user_input_en", user_input),
+                            selected_maintopic_en,
                         )
-                        session["selected_maintopic_en"] = selected_maintopic_en
+                    )
 
-                        # 소주제 생성하고, subtopic.html 페이지로 리다이렉트
-                        en_subtopics, ko_subtopics = (
-                            script_assistant_instance.make_subtopics(
-                                session.get("user_input_en", user_input),
-                                selected_maintopic_en,
-                            )
-                        )
+                    # session에 데이터 저장
+                    session["user_input"] = user_input
+                    session["selected_model"] = selected_model
+                    session["selected_maintopic"] = selected_maintopic
+                    session["ko_subtopics"] = ko_subtopics
+                    session["en_subtopics"] = en_subtopics
 
-                        # session에 데이터 저장
-                        session["user_input"] = user_input
-                        session["selected_model"] = selected_model
-                        session["selected_maintopic"] = selected_maintopic
-                        session["ko_subtopics"] = ko_subtopics
-                        session["en_subtopics"] = en_subtopics
-
-                        # script.html 페이지로 리다이렉트
-                        return redirect(url_for("script"))
+                    # script.html 페이지로 리다이렉트
+                    return redirect(url_for("script"))
 
     return render_template(
         "main.html",
@@ -154,10 +159,6 @@ def main():
 
 @app.route("/script", methods=["GET", "POST"], endpoint="script")
 def script():
-    global bgm_option
-    global model_option
-    global sub_option
-
     # session에 저장된 데이터 불러오기
     user_input = session.get("user_input", "")
     user_input_en = session.get("user_input_en", "")
@@ -166,6 +167,9 @@ def script():
     selected_maintopic_en = session.get("selected_maintopic_en", "")
     ko_subtopics = session.get("ko_subtopics", "")
     en_subtopics = session.get("en_subtopics", "")
+    bgm_option = session.get("bgm_option", "no")
+    model_option = session.get("model_option", "stableDiffusion")
+    sub_option = session.get("sub_option", True)
 
     script_assistant_instance = ScriptAssistant(selected_model)
 
@@ -181,16 +185,19 @@ def script():
         # 배경음악을 선택한 경우
         if "backgroundmusic" in request.json:
             bgm_option = request.json["backgroundmusic"]
+            session["bgm_option"] = bgm_option
             print("BGM 선택!!!", bgm_option)
 
         # image model 선택 옵션
         elif "imageModel" in request.json:
             model_option = request.json["imageModel"]
+            session["model_option"] = model_option
             print("Model 선택", model_option)
 
         # 자막 옵션을 선택한 경우
         elif "isChecked" in request.json:
             sub_option = request.json["isChecked"]
+            session["sub_option"] = sub_option
             print("자막 옵션:", sub_option)
 
         # "스크립트 생성" 버튼이 눌린 경우, request.json으로 data가 들어옴(script.js의 fetch 참고)
@@ -257,11 +264,12 @@ def script():
             script_data = request.json.get("scriptData")
             session["script_data"] = script_data
 
-            # video.html 페이지로 리다이렉트 - flask에서 안 되서 js에서 함ㅠ
+            # video.html 페이지로 리다이렉트 - flask에서 안 돼서 js에서 함ㅠ
             # return redirect(url_for("video"))
 
     # print("BGM 기본값:", bgm_option)
     # print("model: ", model_option)
+    print(bgm_option, model_option, sub_option)
 
     # 템플릿 렌더링. 변수들을 템플릿으로 전달
     return render_template(
@@ -273,13 +281,16 @@ def script():
         selected_maintopic=selected_maintopic,
         subtopics=ko_subtopics,
         user_input_en=user_input_en,
+        bgm_option=bgm_option,
+        model_option=model_option,
+        sub_option=sub_option,
     )
 
 
 # 특정 경로에 저장된 이미지 파일을 로드하기 위한 엔드포인트 추가
-@app.route("/func_images/<path:filename>")
-def func_images(filename):
-    image_folder_path = "func\\images\\"
+@app.route("/show_images/<path:filename>")
+def show_images(filename):
+    image_folder_path = os.path.join(get_user_storage_path(), "images")
     return send_from_directory(image_folder_path, filename)
 
 
@@ -291,21 +302,70 @@ def handle_video_generation_complete():
     emit("video_generation_complete", namespace="/video", broadcast=True)
 
 
-step_now = 1
-step_total = 3
+def progress_callback(description, progress, step_now=0, step_total=3, image_url=None):
+    print(description, progress)
+    socketio.emit(
+        "progress_update",
+        {
+            "description": description,
+            "progress": progress,
+            "step_now_total": f"STEP {step_now} / {step_total}",
+            "image_url": image_url,
+        },
+        namespace="/video",
+    )
+
+
+# 비디오 생성 스레드 만들기
+def start_video_thread(image_path, audio_path, clip_path, video_path):
+    with app.app_context():
+        # 비디오 생성하는 함수
+        add_static_image_to_video(
+            image_path,
+            audio_path,
+            clip_path,
+            video_path,
+            progress_callback=progress_callback,
+        )
+
+
+# 자막 파일 생성하는 스레드
+def subtitle_thread(audio_path, clip_path, sub_path, script_list):
+    with app.app_context():
+        # 자막파일 생성 함수
+        make_subtitle(audio_path, clip_path, sub_path, script_list)
+
+
+# backgroundmusic 생성을 위한 스레드
+def bgm_thread(video_path, bgm_path):
+    with app.app_context():
+        # bgm 생성 함수
+        backgroundmusic(video_path, bgm_path)
 
 
 @app.route("/video", methods=["GET", "POST"], endpoint="video")
 def video():
-    global step_now, model_option
-
-    step_now = 1
-
     print("Reached the /video endpoint.")
     script_data = session.get("script_data", "")
     maintheme_ko = session.get("selected_maintopic", "")
     maintheme_en = session.get("selected_maintopic_en", "")
     bgm_name = session.get("user_input_en", "")
+    bgm_option = session.get("bgm_option", "no")
+    model_option = session.get("model_option", "stableDiffusion")
+    sub_option = session.get("sub_option", True)
+    print(bgm_option, model_option, sub_option)
+
+    image_path = os.path.join("apps", "aieditor", get_user_storage_path(), "images/")
+    audio_path = os.path.join("apps", "aieditor", get_user_storage_path(), "voices/")
+    clip_path = os.path.join("apps", "aieditor", get_user_storage_path(), "clips/")
+    video_path = os.path.join("apps", "aieditor", get_user_storage_path(), "finalclip/")
+    sub_path = os.path.join("apps", "aieditor", get_user_storage_path())
+    bgm_path = f"apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
+
+    # path가 존재하지 않으면 생성
+    for path in [image_path, audio_path, clip_path, video_path]:
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
 
     # ScriptSplitter 인스턴스 생성 또는 업데이트
     script_splitter_instance = ScriptSplitter()
@@ -325,72 +385,14 @@ def video():
         stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
         print(stable_diffusion_prompts)
 
-    def progress_callback(description, progress, image_url=None):
-        global step_now, step_total
-
-        print(description, progress)
-        socketio.emit(
-            "progress_update",
-            {
-                "description": description,
-                "progress": progress,
-                "step_now_total": f"STEP {step_now} / {step_total}",
-                "image_url": image_url,
-            },
-            namespace="/video",
-        )
-
-    # 비디오 생성 스레드 만들기
-    def start_video_thread():
-        global step_now
-        with app.app_context():
-            image_path = "apps/aieditor/func/images/"
-            audio_path = "apps/aieditor/func/voice/"
-            clip_path = "apps/aieditor/func/clip/"
-            output_path = "apps/aieditor/func/finalclip/"
-
-            # path가 없으면 만듦
-            os.makedirs(clip_path, exist_ok=True)
-            os.makedirs(output_path, exist_ok=True)
-
-            # 비디오 생성하는 함수
-            add_static_image_to_video(
-                image_path,
-                audio_path,
-                clip_path,
-                output_path,
-                progress_callback=progress_callback,
-            )
-
-        step_now += 1
-
-    # backgroundmusic 생성을 위한 스레드
-    def bgm_thread():
-        with app.app_context():
-            video_path = "apps/aieditor/func/finalclip/"
-            bgm_path = f"apps/aieditor/static/audio/musicgen_{bgm_name}.wav"
-
-            # bgm 생성 함수
-            backgroundmusic(video_path, bgm_path)
-
-    # 자막 파일 생성하는 스레드
-    def subtitle_thread():
-        with app.app_context():
-            audio_path = "apps/aieditor/func/voice/"
-            clip_path = "apps/aieditor/func/clip/"
-
-            # 자막파일 생성 함수
-            make_subtitle(audio_path, clip_path, script_list)
-
     # 앞서 생성한 스레드 함수들이 차례대로 돌아갈 수 있도록 작성
     def thread_start():
-        global video_generation_complete
-        global bgm_option, step_now, model_option, sub_option
         with app.app_context():
             try:
-                voice_gan_wavenet(script_list, progress_callback=progress_callback)
-                # voice_gan_naver(script_list, progress_callback=progress_callback)
-                step_now += 1
+                voice_gan_wavenet(
+                    script_list, audio_path, progress_callback=progress_callback
+                )
+                # voice_gan_naver(script_list, audio_path, progress_callback=progress_callback)
 
                 # image_with_sub 사용자 선택 여부에 따라 바뀜
                 image_with_sub = sub_option
@@ -401,6 +403,7 @@ def video():
                             api_key,
                             script_list,
                             dalle_prompts,
+                            image_path,
                             progress_callback,
                             image_with_sub,
                         ),
@@ -411,6 +414,7 @@ def video():
                         args=(
                             script_list,
                             stable_diffusion_prompts,
+                            image_path,
                             progress_callback,
                             image_with_sub,
                         ),
@@ -419,27 +423,32 @@ def video():
                 # image 스레드 시작
                 start_image.start()
                 start_image.join()
-                step_now += 1
 
                 # image 생성 종료 이후 video 스레드 시작
-                start_video = threading.Thread(target=start_video_thread)
+                start_video = threading.Thread(
+                    target=start_video_thread,
+                    args=(image_path, audio_path, clip_path, video_path),
+                )
                 start_video.start()
                 start_video.join()
 
                 # video 생성이 끝난 후 자막 파일 생성함
-                start_subtitle = threading.Thread(target=subtitle_thread)
+                start_subtitle = threading.Thread(
+                    target=subtitle_thread,
+                    args=(audio_path, clip_path, sub_path, script_list),
+                )
                 start_subtitle.start()
                 start_subtitle.join()
 
                 # bgm 옵션을 선택했을 때, 비디오에 bgm을 합성하는 스레드 시작
                 if bgm_option == "yes":
-                    start_bgm = threading.Thread(target=bgm_thread)
+                    start_bgm = threading.Thread(
+                        target=bgm_thread, args=(video_path, bgm_path)
+                    )
                     start_bgm.start()
                     start_bgm.join()
 
-                # 위 과정이 전부 완료되고 나면 video_generation_complete 변수에 True를 할당
-                # socket을 사용하여 /video 서버에 요청을 보냄
-                video_generation_complete = True
+                # 위 과정이 전부 완료되고 나면 socket을 사용하여 /video 서버에 요청을 보냄
                 socketio.emit("video_generation_complete", namespace="/video")
 
                 # 비디오 생성이 완료되면 download_video로 리다이렉트
@@ -465,28 +474,30 @@ def download_video():
     없으면 그 이전 단계인 merge_video를 보냅니다.
 
     """
-    video_path = (
-        "C:/Users/SBA/Documents/GitHub/video_factory/apps/aieditor/func/finalclip/"
-    )
+    video_path = os.path.join("apps", "aieditor", get_user_storage_path(), "finalclip")
     file = "final_video.mp4"
     if os.path.exists(os.path.join(video_path, file)):
         filename = "final_video.mp4"
     else:
         filename = "merge_video.mp4"
-    return render_template("download.html", filename=filename, subtitle="sample.srt")
+
+    # 세션 지우기
+    # session.clear()
+
+    return render_template("download.html", filename=filename, subtitle="sub.srt")
 
 
 # subtitle과 video 다운로드를 위한 코드
-@app.route("/download/<filename>")
+@app.route("/download/<path:filename>")
 def download(filename):
-    finalclip_folder_path = "func\\finalclip\\"
+    finalclip_folder_path = os.path.join(get_user_storage_path(), "finalclip")
     return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
 
 
-@app.route("/download_sb", methods=["GET"])
-def download_sb():
-    sb_path = "func\\sub.srt"
-    return send_file(sb_path, as_attachment=True)
+@app.route("/download_sub", methods=["GET"])
+def download_sub():
+    sub_path = os.path.join(get_user_storage_path(), "sub.srt")
+    return send_file(sub_path, as_attachment=True)
 
 
 if __name__ == "__main__":

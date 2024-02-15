@@ -8,7 +8,7 @@ import os
 
 # cuda gpu사용 가능한지 여부 확인
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"using device : {device}")
+print(f"BGM using device : {device}")
 
 
 class musicGen:
