@@ -7,8 +7,8 @@ client_id = "YOUR_CLIENT_ID"  # 클라이언트 ID
 client_secret = "YOUR_CLIENT_SECRET"  # 클라이언트 시크릿
 
 
-def voice_gan_naver(sentences, progress_callback=None):
-    output_folder = "apps/aieditor/func/voice"
+def voice_gan_naver(sentences, output_folder, progress_callback=None):
+    output_folder = output_folder
     # output_folder가 없으면 만듦
     os.makedirs(output_folder, exist_ok=True)
 

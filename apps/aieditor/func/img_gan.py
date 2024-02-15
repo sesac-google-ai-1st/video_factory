@@ -9,6 +9,7 @@ import platform
 import textwrap
 from io import BytesIO
 import os
+import torch
 
 
 def textsize(text, font):
@@ -114,7 +115,9 @@ def img_gan_prompt(lang, maintheme, scripts):
 # print(prompts)
 
 
-def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=False):
+def img_gan_dalle3(
+    api_key, script, prompts, output_folder, progress_callback=None, with_sub=False
+):
     """
     dalle3 모델로 이미지를 생성하는 함수,
     인수 openAI api kes, img_gan_prompt 함수로 생성한 prompts : list
@@ -128,7 +131,7 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
     # size = "1024x1792" # dalle3
 
     # 응답 상태 코드가 200 OK 인지 확인합니다.
-    output_folder = "apps/aieditor/func/images"
+    output_folder = output_folder
     # output_folder가 없으면 만듦
     os.makedirs(output_folder, exist_ok=True)
 
@@ -165,7 +168,7 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
                 progress_callback(
                     "이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/show_images/{idx+1:0>3}.jpg",
                     step_now=2,
                 )
 
@@ -185,7 +188,7 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
                 progress_callback(
                     "자막이 합성된 이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/show_images/{idx+1:0>3}.jpg",
                     step_now=2,
                 )
 
@@ -195,19 +198,32 @@ def img_gan_dalle3(api_key, script, prompts, progress_callback=None, with_sub=Fa
 
 
 # sdxl turbo로 이미지 생성하는 함수
-def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
+def img_gen_sdxlturb(
+    script, prompts, output_folder, progress_callback=None, with_sub=False
+):
     """
     stable diffusion sdxlturb 모델로 이미지를 생성하는 함수,
     인수 img_gan_prompt 함수로 생성한 prompts : list
     실행되는 곳에 ./images 폴더가 있어야함, 파일명은 1번 부터 list의 길이 만큼
     """
+    # cuda gpu사용 가능한지 여부 확인
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Stable diffusion using device : {device}")
+
     # 파이프 라인 만들기(sdxl turbo 모델 가져오기)
-    pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo")
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        pipe = AutoPipelineForText2Image.from_pretrained(
+            "stabilityai/sdxl-turbo", torch_dtype=torch.float16, variant="fp16"
+        )
+        pipe.to("cuda")
+    else:
+        pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo")
 
     width = 1280
     height = 720
 
-    output_folder = "apps/aieditor/func/images"
+    output_folder = output_folder
     # output_folder가 없으면 만듦
     os.makedirs(output_folder, exist_ok=True)
 
@@ -241,7 +257,7 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
                 progress_callback(
                     "이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/show_images/{idx+1:0>3}.jpg",
                     step_now=2,
                 )
 
@@ -267,9 +283,12 @@ def img_gen_sdxlturb(script, prompts, progress_callback=None, with_sub=False):
                 progress_callback(
                     "자막이 합성된 이미지 생성 중",
                     round(((idx + 1) / len(prompts)) * 100),
-                    image_url=f"/func_images/{idx+1:0>3}.jpg",
+                    image_url=f"/show_images/{idx+1:0>3}.jpg",
                     step_now=2,
                 )
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # Generation is complete
     if progress_callback:
