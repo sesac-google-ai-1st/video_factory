@@ -434,6 +434,8 @@ videoButton.addEventListener("click", async (event) => {
 
     console.log("최종 스크립트 session에 저장 완료");
 
+    videoButton.classList.remove('button--loading');
+
     // 이후 필요한 동작 수행
     // 예를 들면, 페이지를 리다이렉트하거나 다른 작업을 수행
     window.location.href = "/video";
