@@ -47,6 +47,18 @@ def get_user_storage_path():
     return user_path
 
 
+# 오류 처리기 함수 정의
+@app.errorhandler(500)
+def handle_stop_candidate_exception(error):
+    # 사용자에게 경고를 표시하는 페이지 렌더링
+    selected_model = session.get("selected_model", "LLM 생성기")
+    error_msg = f"⚠️ {selected_model}가 유해함을 감지하였습니다. 다시 생성해주세요. ⚠️"
+    return (
+        render_template("error.html", error_message=error_msg),
+        500,
+    )
+
+
 @app.route("/", methods=["GET", "POST"])
 def main():
     user_input = session.get("user_input", "")

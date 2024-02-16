@@ -49,7 +49,7 @@ def pil_draw_label(
     elif platform.system() == "Linux":  # 리눅스
         """
         !wget "https://www.wfonts.com/download/data/2016/06/13/malgun-gothic/malgunbd.ttf"
-        !mv malgun.ttf /usr/share/fonts/truetype/
+        !mv malgundb.ttf /usr/share/fonts/truetype/
         import matplotlib.font_manager as fm
         fm._rebuild()
         """
@@ -235,7 +235,7 @@ def img_gen_sdxlturb(
     for idx, prompt in enumerate(prompts):
         image = pipe(
             prompt=prompt,
-            num_inference_steps=1,
+            num_inference_steps=4,
             guidance_scale=0.0,
             width=width,
             height=height,
