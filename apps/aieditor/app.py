@@ -1,5 +1,6 @@
 import os
 import uuid
+from dotenv import load_dotenv
 
 from flask import Flask, render_template, send_from_directory, send_file
 from flask import request, Response, url_for, redirect, session, flash
@@ -21,12 +22,14 @@ from apps.aieditor.func.video_edit import (
     make_subtitle,
 )
 
+load_dotenv()
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 # session 사용을 위해 secret key를 설정
-app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
+app.config["SECRET_KEY"] = os.getenv("secret_key")
+app.config["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 # openai api key 이건 삭제하고 업로드
 api_key = ""
@@ -388,18 +391,18 @@ def video():
     script_list = script_splitter_instance.split_script2sentences(script_data)
 
     # 이미지 생성용 프롬프트 만들기
-    # dalle 선택한 경우
-    if model_option == "dalle3":
-        dalle_prompts = img_gan_prompt("ko", maintheme_ko, script_list)
-        print(dalle_prompts)
-    # stable 선택한 경우
-    elif model_option == "stableDiffusion":
-        script_assistant_instance = ScriptAssistant("Gemini")
-        script_list_en = [
-            script_assistant_instance.translate2en(script) for script in script_list
-        ]
-        stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
-        print(stable_diffusion_prompts)
+    # # dalle 선택한 경우
+    # if model_option == "dalle3":
+    #     dalle_prompts = img_gan_prompt("ko", maintheme_ko, script_list)
+    #     print(dalle_prompts)
+    # # stable 선택한 경우
+    # elif model_option == "stableDiffusion":
+    script_assistant_instance = ScriptAssistant("Gemini")
+    script_list_en = [
+        script_assistant_instance.translate2en(script) for script in script_list
+    ]
+    stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
+    print(stable_diffusion_prompts)
 
     # 앞서 생성한 스레드 함수들이 차례대로 돌아갈 수 있도록 작성
     def thread_start():
@@ -417,7 +420,7 @@ def video():
                         target=img_gen_sd_dalle3,
                         args=(
                             script_list,
-                            dalle_prompts,
+                            stable_diffusion_prompts,
                             image_path,
                             progress_callback,
                             image_with_sub,
