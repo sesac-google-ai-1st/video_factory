@@ -3,6 +3,7 @@ import requests
 
 # diffusers 모델 돌릴때
 from diffusers import AutoPipelineForText2Image
+from diffusers import DiffusionPipeline
 from PIL import Image, ImageDraw, ImageFont
 
 import platform
@@ -49,7 +50,7 @@ def pil_draw_label(
     elif platform.system() == "Linux":  # 리눅스
         """
         !wget "https://www.wfonts.com/download/data/2016/06/13/malgun-gothic/malgunbd.ttf"
-        !mv malgun.ttf /usr/share/fonts/truetype/
+        !mv malgundb.ttf /usr/share/fonts/truetype/
         import matplotlib.font_manager as fm
         fm._rebuild()
         """
@@ -115,7 +116,7 @@ def img_gan_prompt(lang, maintheme, scripts):
 # print(prompts)
 
 
-def img_gan_dalle3(
+def img_gen_dalle3(
     api_key, script, prompts, output_folder, progress_callback=None, with_sub=False
 ):
     """
@@ -198,6 +199,105 @@ def img_gan_dalle3(
 
 
 # sdxl turbo로 이미지 생성하는 함수
+def img_gen_sd_dalle3(
+    script, prompts, output_folder, progress_callback=None, with_sub=False
+):
+    """
+    stable diffusion sdxlturb 모델로 이미지를 생성하는 함수,
+    인수 img_gan_prompt 함수로 생성한 prompts : list
+    실행되는 곳에 ./images 폴더가 있어야함, 파일명은 1번 부터 list의 길이 만큼
+    """
+    # cuda gpu사용 가능한지 여부 확인
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Stable diffusion using device : {device}")
+
+    # 파이프 라인 만들기(sdxl turbo 모델 가져오기)
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        pipe = DiffusionPipeline.from_pretrained("stablediffusionapi/juggernaut-xl-v5")
+        pipe.load_lora_weights("ehristoforu/dalle-3-xl")
+        pipe.to("cuda")
+    else:
+        pipe = DiffusionPipeline.from_pretrained("stablediffusionapi/juggernaut-xl-v5")
+        pipe.load_lora_weights("ehristoforu/dalle-3-xl")
+
+    width = 1280
+    height = 720
+
+    output_folder = output_folder
+    # output_folder가 없으면 만듦
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Generation start
+    if progress_callback:
+        progress_callback("이미지 생성 중", 0, step_now=2)
+
+    # 이미지 생성(프롬프트 입력, 추론 스텝 1, 프롬프트 충실도 0)
+    for idx, prompt in enumerate(prompts):
+        image = pipe(
+            prompt=prompt,
+            num_inference_steps=15,
+            guidance_scale=6,
+            width=width,
+            height=height,
+        ).images[0]
+
+        # 이미지 저장
+        if not isinstance(image, Image.Image):
+            image = Image.fromarray(image)
+
+        output_path = os.path.join(output_folder, f"{idx+1:0>3}.jpg")
+
+        if not with_sub:  # 자막 없는 이미지
+            # 이미지 저장
+            image.save(output_path)
+            print(f"이미지가 {output_path}에 저장되었습니다.")
+
+            # Emit progress update to the client
+            if progress_callback:
+                progress_callback(
+                    "이미지 생성 중",
+                    round(((idx + 1) / len(prompts)) * 100),
+                    image_url=f"/show_images/{idx+1:0>3}.jpg",
+                    step_now=2,
+                )
+
+        elif with_sub:  # 자막 있는 이미지
+            print("자막 있음")
+            # Emit progress update to the client
+            if progress_callback:
+                sub = script[idx]
+                print("자막 :", sub)
+                # 자막 추가
+                image = pil_draw_label(
+                    image,
+                    sub,
+                    font_size=25,
+                    max_line_length=50,
+                    bottom_margin=40,
+                )
+
+                # 결과 이미지 저장
+                image.save(output_path)
+                print(f"이미지가 {output_path}에 저장되었습니다.")
+
+                progress_callback(
+                    "자막이 합성된 이미지 생성 중",
+                    round(((idx + 1) / len(prompts)) * 100),
+                    image_url=f"/show_images/{idx+1:0>3}.jpg",
+                    step_now=2,
+                )
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    # Generation is complete
+    if progress_callback:
+        progress_callback("이미지 생성 완료", 100, step_now=2)
+
+
+# sdxl turbo로 이미지 생성하는 함수
 def img_gen_sdxlturb(
     script, prompts, output_folder, progress_callback=None, with_sub=False
 ):
@@ -214,7 +314,9 @@ def img_gen_sdxlturb(
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         pipe = AutoPipelineForText2Image.from_pretrained(
-            "stabilityai/sdxl-turbo", torch_dtype=torch.float16, variant="fp16"
+            "stabilityai/sdxl-turbo",
+            torch_dtype=torch.float16,
+            variant="fp16",
         )
         pipe.to("cuda")
     else:
@@ -235,7 +337,7 @@ def img_gen_sdxlturb(
     for idx, prompt in enumerate(prompts):
         image = pipe(
             prompt=prompt,
-            num_inference_steps=1,
+            num_inference_steps=4,
             guidance_scale=0.0,
             width=width,
             height=height,
