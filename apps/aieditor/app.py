@@ -53,6 +53,9 @@ def get_user_storage_path():
     # print("user_경로:", user_path)
     return user_path
 
+@app.route("/intro", methods=["GET", "POST"])
+def intro():
+     return render_template("intro.html")
 
 # 오류 처리기 함수 정의
 @app.errorhandler(500)
