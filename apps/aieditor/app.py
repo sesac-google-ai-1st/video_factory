@@ -1,5 +1,6 @@
 import os
 import uuid
+from dotenv import load_dotenv
 
 from flask import Flask, render_template, send_from_directory, send_file
 from flask import request, Response, url_for, redirect, session, flash
@@ -10,19 +11,25 @@ import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
 from apps.aieditor.func.naver import voice_gan_naver
-from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3, img_gen_sdxlturb
+from apps.aieditor.func.img_gan import (
+    img_gan_prompt,
+    img_gen_sd_dalle3,
+    img_gen_sdxlturb,
+)
 from apps.aieditor.func.video_edit import (
     add_static_image_to_video,
     backgroundmusic,
     make_subtitle,
 )
 
+load_dotenv()
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 # session 사용을 위해 secret key를 설정
-app.config["SECRET_KEY"] = "2hghg2GHgJ22H"
+app.config["SECRET_KEY"] = os.getenv("secret_key")
+app.config["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 # openai api key 이건 삭제하고 업로드
 api_key = ""
@@ -49,6 +56,18 @@ def get_user_storage_path():
 @app.route("/intro", methods=["GET", "POST"])
 def intro():
      return render_template("intro.html")
+
+# 오류 처리기 함수 정의
+@app.errorhandler(500)
+def handle_stop_candidate_exception(error):
+    # 사용자에게 경고를 표시하는 페이지 렌더링
+    selected_model = session.get("selected_model", "LLM 생성기")
+    error_msg = f"⚠️ {selected_model}가 유해함을 감지하였습니다. 다시 생성해주세요. ⚠️"
+    return (
+        render_template("error.html", error_message=error_msg),
+        500,
+    )
+
 
 @app.route("/", methods=["GET", "POST"])
 def main():
@@ -375,18 +394,18 @@ def video():
     script_list = script_splitter_instance.split_script2sentences(script_data)
 
     # 이미지 생성용 프롬프트 만들기
-    # dalle 선택한 경우
-    if model_option == "dalle3":
-        dalle_prompts = img_gan_prompt("ko", maintheme_ko, script_list)
-        print(dalle_prompts)
-    # stable 선택한 경우
-    elif model_option == "stableDiffusion":
-        script_assistant_instance = ScriptAssistant("Gemini")
-        script_list_en = [
-            script_assistant_instance.translate2en(script) for script in script_list
-        ]
-        stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
-        print(stable_diffusion_prompts)
+    # # dalle 선택한 경우
+    # if model_option == "dalle3":
+    #     dalle_prompts = img_gan_prompt("ko", maintheme_ko, script_list)
+    #     print(dalle_prompts)
+    # # stable 선택한 경우
+    # elif model_option == "stableDiffusion":
+    script_assistant_instance = ScriptAssistant("Gemini")
+    script_list_en = [
+        script_assistant_instance.translate2en(script) for script in script_list
+    ]
+    stable_diffusion_prompts = img_gan_prompt("en", maintheme_en, script_list_en)
+    print(stable_diffusion_prompts)
 
     # 앞서 생성한 스레드 함수들이 차례대로 돌아갈 수 있도록 작성
     def thread_start():
@@ -401,11 +420,10 @@ def video():
                 image_with_sub = sub_option
                 if model_option == "dalle3":
                     start_image = threading.Thread(
-                        target=img_gan_dalle3,
+                        target=img_gen_sd_dalle3,
                         args=(
-                            api_key,
                             script_list,
-                            dalle_prompts,
+                            stable_diffusion_prompts,
                             image_path,
                             progress_callback,
                             image_with_sub,
@@ -477,7 +495,7 @@ def download_video():
     없으면 그 이전 단계인 merge_video를 보냅니다.
 
     """
-    video_path = os.path.join("apps", "aieditor", get_user_storage_path(), "finalclip")
+    video_path = os.path.join(get_user_storage_path(), "finalclip")
     file = "final_video.mp4"
     if os.path.exists(os.path.join(video_path, file)):
         filename = "final_video.mp4"
@@ -504,4 +522,4 @@ def download_sub():
 
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)

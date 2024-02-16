@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // const socket = io.connect("http://localhost:5000/socket.io/");
 // 클라이언트 측 JavaScript
-var socket = io.connect('http://127.0.0.1:5000/video');
+var socket = io.connect('http://' + document.domain + ':' + location.port + '/video');
 
 socket.on('connect', function() {
     console.log('Socket.IO에 연결되었습니다.');

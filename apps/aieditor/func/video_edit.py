@@ -17,9 +17,9 @@ def add_static_image_to_video(
     이미지와 오디오가 합쳐진 영상과 영상간의 transition이 합쳐져 merge_video로 출력됩니다.
     """
     image_files = os.listdir(image_path)  # image와 audio 파일을 받아 list로 저장
-    print(image_files)
+    image_files = sorted(image_files)
     audio_files = os.listdir(audio_path)
-    print(audio_files)
+    audio_files = sorted(audio_files)
 
     # empty list 생성
     clips = []
@@ -54,6 +54,7 @@ def add_static_image_to_video(
         for file in os.listdir(clip_path)
         if file.endswith(".mp4") and not file.startswith("result")
     ]
+    clips = sorted(clips)
 
     # 비디오 클립과 트랜지션 비디오를 저장할 리스트 초기화
     video_clips = []

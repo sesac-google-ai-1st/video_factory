@@ -101,6 +101,24 @@ class ScriptAssistant:
         output format = n. sub_topics \n text
         {human_input}
         """
+        self.gemini_safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_NONE",
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_NONE",
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_NONE",
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_NONE",
+            },
+        ]
 
         # Chat model 선택
         if llm_name == "GPT":
@@ -111,7 +129,7 @@ class ScriptAssistant:
                 model="gemini-pro",
                 temperature=1,
                 convert_system_message_to_human=True,
-                # client=safety_settings,
+                safety_settings=self.gemini_safety_settings,
             )
             self.script_prompt_ = self.gemini_script_prompt
         else:
@@ -186,7 +204,11 @@ class ScriptAssistant:
         # translate chain
         self.translate_chain = (
             self.translate2ko_prompt_template
-            | ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
+            | ChatGoogleGenerativeAI(
+                model="gemini-pro",
+                temperature=0,
+                safety_settings=self.gemini_safety_settings,
+            )
         )
         # parsing을 위해 return 값 알아두기 : AIMessage(content='blah')
 
@@ -206,7 +228,11 @@ class ScriptAssistant:
         self.translate2en_prompt = ChatPromptTemplate.from_template(
             """Translate "{text}" to English."""
         )
-        self.model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
+        self.model = ChatGoogleGenerativeAI(
+            model="gemini-pro",
+            temperature=0,
+            safety_settings=self.gemini_safety_settings,
+        )
         self.translate2en_chain = self.translate2en_prompt | self.model
         self.ko = self.translate2en_chain.invoke({"text": text})
         return self.ko.content

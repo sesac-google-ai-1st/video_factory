@@ -409,6 +409,7 @@ scriptform.addEventListener("submit", async (event) => {
  * @param {Event} event - 폼 제출 이벤트
  */
 const videoButton = document.getElementById("video-button");
+videoButton.classList.remove('button--loading');
 
 videoButton.addEventListener("click", async (event) => {
   event.preventDefault();
@@ -416,6 +417,13 @@ videoButton.addEventListener("click", async (event) => {
   // 모든 textarea의 innerValue를 읽어서 배열에 저장
   const scriptBoxes = document.querySelectorAll('.script-box');
   const scriptData = Array.from(scriptBoxes).map(textarea => textarea.value);
+
+  // scriptData가 비어있는지 확인
+  if (scriptData.every(script => script.trim() === '')) {
+    alert("⚠️ 스크립트를 입력한 후 영상을 생성해주세요! ⚠️");
+    videoButton.classList.remove('button--loading');
+    return;
+  }
 
   // video_button과 scriptData를 JSON 형식으로 Flask server에 요청을 보냄
   try {
@@ -433,6 +441,8 @@ videoButton.addEventListener("click", async (event) => {
     }
 
     console.log("최종 스크립트 session에 저장 완료");
+
+    // videoButton.classList.remove('button--loading');
 
     // 이후 필요한 동작 수행
     // 예를 들면, 페이지를 리다이렉트하거나 다른 작업을 수행
