@@ -46,6 +46,9 @@ def get_user_storage_path():
     print("user_경로:", user_path)
     return user_path
 
+@app.route("/intro", methods=["GET", "POST"])
+def intro():
+     return render_template("intro.html")
 
 @app.route("/", methods=["GET", "POST"])
 def main():

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Video with AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/intro_style.css') }}">
+</head>
+<body>
+
+
+<header>
+    <div class="header-content">
+        <div class="logo-container"> <!-- 로고 컨테이너 추가 -->
+            <img src="{{ url_for('static', filename='image/logo2.png') }}"  alt="Logo" class="logo"> <!-- header 로고 이미지 -->
+        </div>
+
+        <!-- 나머지 header 내용 -->
+        <nav class="header-nav">    
+            <a href="#use-cases">use cases</a>
+            <a href="#skills">skills</a>
+            <a href="#teams">Teams</a>
+        </nav>
+        <div class="buttons-container">
+            <!-- <button id="login-button">log in</button> -->
+            <button id="get-started-header">get started</button>
+        </div>
+    </div>
+</header>
+
+
+
+
+<main id="content">
+    <div class="circle-border circle-small"></div>
+    <div class="circle-border circle-large"></div>
+
+    <div id="content-wrapper">
+        <img src="{{ url_for('static', filename='image/logo3.png') }}" alt="Logo" id="logo">
+        <h1 id="main-title">Create Video with AI</h1>
+    </div>
+    <p id="sub-title">If you just put the topic in, we'll make a video for you.</p>
+    <button id="get-started-button">Get Started</button>
+</main>
+
+
+
+<!-- use cases 섹션, main 태그 바깥에 배치 -->
+<section id="use-cases" class="use-cases-section">
+    <div class="container">
+        <h2>AI Video Generator for any use case</h2>
+        <p>These are videos using our ai video editor</p>
+        <div class="video-grid">
+            <!-- 첫 번째 비디오 카드 -->
+            <div class="video-card" onclick="playVideo(this)">
+                <video>
+                    <source src="{{ url_for('static', filename='video/video1.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="custom-play-button"></div> <!-- 사용자 정의 재생 버튼 추가 -->
+                <div class="video-description">
+                    <p>농작물</p>
+                    <button onclick="location.href='your-link-here.html'">Get Started</button> <!-- 텍스트 변경 및 링크 추가 -->
+                </div>
+            </div>
+            <!-- 비디오 모달 -->
+            <div class="video-modal" id="videoModal">
+                <div class="video-modal-content" id="videoModalContent">
+                    <video controls id="modalVideo">
+                        <!-- 비디오 소스는 자바스크립트를 통해 설정될 것입니다. -->
+                    </video>
+                </div>
+            </div>
+            <!-- 추가 비디오 카드 -->
+            <!-- 2 번째 비디오 카드 -->
+            <div class="video-card" onclick="playVideo(this)">
+                <video>
+                    "{{ url_for('static', filename='video/video1.mp4') }}"
+                    <source src="{{ url_for('static', filename='video/video2.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="custom-play-button"></div> <!-- 사용자 정의 재생 버튼 추가 -->
+                <div class="video-description">
+                    <p>타사이트</p>
+                    <button onclick="location.href='your-link-here.html'">Get Started</button> <!-- 텍스트 변경 및 링크 추가 -->
+                </div>
+            </div>
+            <!-- 비디오 모달 -->
+            <div class="video-modal" id="videoModal">
+                <div class="video-modal-content" id="videoModalContent">
+                    <video controls id="modalVideo">
+                        <!-- 비디오 소스는 자바스크립트를 통해 설정될 것입니다. -->
+                    </video>
+                </div>
+            </div>
+            <!-- 추가 비디오 카드 -->
+            <!-- 3 번째 비디오 카드 -->
+            <div class="video-card" onclick="playVideo(this)">
+                <video>
+                    <source src="{{ url_for('static', filename='video/video3.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="custom-play-button"></div> <!-- 사용자 정의 재생 버튼 추가 -->
+                <div class="video-description">
+                    <p>비타민_스테이블</p>
+                    <button onclick="location.href='your-link-here.html'">Get Started</button> <!-- 텍스트 변경 및 링크 추가 -->
+                </div>
+            </div>
+            <!-- 비디오 모달 -->
+            <div class="video-modal" id="videoModal">
+                <div class="video-modal-content" id="videoModalContent">
+                    <video controls id="modalVideo">
+                        <!-- 비디오 소스는 자바스크립트를 통해 설정될 것입니다. -->
+                    </video>
+                </div>
+            </div>
+            <!-- 추가 비디오 카드 -->
+            <!-- 4 번째 비디오 카드 -->
+            <div class="video-card" onclick="playVideo(this)">
+                <video>
+                    <source src="{{ url_for('static', filename='video/video4.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="custom-play-button"></div> <!-- 사용자 정의 재생 버튼 추가 -->
+                <div class="video-description">
+                    <p>백조의 호수</p>
+                    <button onclick="location.href='your-link-here.html'">Get Started</button> <!-- 텍스트 변경 및 링크 추가 -->
+                </div>
+            </div>
+            <!-- 비디오 모달 -->
+            <div class="video-modal" id="videoModal">
+                <div class="video-modal-content" id="videoModalContent">
+                    <video controls id="modalVideo">
+                        <!-- 비디오 소스는 자바스크립트를 통해 설정될 것입니다. -->
+                    </video>
+                </div>
+            </div>
+            <!-- 추가 비디오 카드 -->
+            <!-- 5 번째 비디오 카드 -->
+            <div class="video-card" onclick="playVideo(this)">
+                <video>
+                    <source src="{{ url_for('static', filename='video/video5.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="custom-play-button"></div> <!-- 사용자 정의 재생 버튼 추가 -->
+                <div class="video-description">
+                    <p>비타민_달리</p>
+                    <button onclick="location.href='your-link-here.html'">Get Started</button> <!-- 텍스트 변경 및 링크 추가 -->
+                </div>
+            </div>
+            <!-- 비디오 모달 -->
+            <div class="video-modal" id="videoModal">
+                <div class="video-modal-content" id="videoModalContent">
+                    <video controls id="modalVideo">
+                        <!-- 비디오 소스는 자바스크립트를 통해 설정될 것입니다. -->
+                    </video>
+                </div>
+            </div>
+            <!-- 추가 비디오 카드 -->
+            <!-- 6 번째 비디오 카드 -->
+            <div class="video-card" onclick="playVideo(this)">
+                <video>
+                    <source src="{{ url_for('static', filename='video/video6.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="custom-play-button"></div> <!-- 사용자 정의 재생 버튼 추가 -->
+                <div class="video-description">
+                    <p>설탕과 치아건강</p>
+                    <button onclick="location.href='your-link-here.html'">Get Started</button> <!-- 텍스트 변경 및 링크 추가 -->
+                </div>
+            </div>
+            <!-- 비디오 모달 -->
+            <div class="video-modal" id="videoModal">
+                <div class="video-modal-content" id="videoModalContent">
+                    <video controls id="modalVideo">
+                        <!-- 비디오 소스는 자바스크립트를 통해 설정될 것입니다. -->
+                    </video>
+                </div>
+            </div>
+            <!-- 추가 비디오 카드 -->
+        </div>
+    </div>
+</section>
+
+<!-- Products 섹션 -->
+<section id="skills" class="products-section">    
+    <h2>Skills</h2>
+    <!-- 이 곳에 추가적인 내용을 배치합니다 -->
+    <div class="center-circle">
+        <img src="{{ url_for('static', filename='image/logo2.png') }}" alt="Logo" class="logo">
+    </div>
+    <div class="outer-circle">
+        <img src="{{ url_for('static', filename='image/logo_python.png') }}" alt="Wavenet Logo" class="tech-logo time-1">
+        <!-- 12개의 이미지에 대한 추가 태그 -->
+        <img src="{{ url_for('static', filename='image/logo_flask.webp') }}" alt="Langchain Logo" class="tech-logo time-2">
+        <img src="{{ url_for('static', filename='image/logo_hcj.jpg') }}" alt="Wavenet Logo" class="tech-logo time-3">
+        <!-- 12개의 이미지에 대한 추가 태그 -->
+        <img src="{{ url_for('static', filename='image/logo_wavenet.jpg') }}" alt="Langchain Logo" class="tech-logo time-4">
+        <img src="{{ url_for('static', filename='image/logo_musicgen.jpg') }}" alt="Wavenet Logo" class="tech-logo time-5">
+        <!-- 12개의 이미지에 대한 추가 태그 -->
+        <img src="{{ url_for('static', filename='image/logo_gemini.png') }}" alt="Langchain Logo" class="tech-logo time-6">
+        <img src="{{ url_for('static', filename='image/logo_gpt.png') }}" alt="Wavenet Logo" class="tech-logo time-7">
+        <!-- 12개의 이미지에 대한 추가 태그 -->
+        <img src="{{ url_for('static', filename='image/logo_LangChain.png') }}" alt="Langchain Logo" class="tech-logo time-8">
+        <img src="{{ url_for('static', filename='image/logo_stable.jpg') }}" alt="Wavenet Logo" class="tech-logo time-9">
+        <!-- 12개의 이미지에 대한 추가 태그 -->
+        <img src="{{ url_for('static', filename='image/logo_dall.png') }}" alt="Langchain Logo" class="tech-logo time-10">    
+        <img src="{{ url_for('static', filename='image/logo_sql.png') }}" alt="Wavenet Logo" class="tech-logo time-11">
+        <img src="{{ url_for('static', filename='image/logo_gcp.png') }}" alt="Wavenet Logo" class="tech-logo time-12">
+        <!-- 12개의 이미지에 대한 추가 태그 -->
+    </div>
+</section>
+
+
+<!-- 기존 main 및 use cases 섹션 다음에 teams 섹션 추가 -->
+<!-- 팀 섹션 -->
+<section id="teams" class="team-section">
+    <div class="container">
+        <h2>Team Member</h2>
+        <div class="team-members-container">
+            <div class="team-member">
+                <img src="{{ url_for('static', filename='image/l.jpg') }}" alt="팀 멤버 1" class="team-member-photo">
+                <div class="team-member-info">
+                    <h3>이철현</h3>
+                    <a href="https://github.com/username" target="_blank">
+                        <img src="{{ url_for('static', filename='image/github.png') }}" alt="GitHub" class="github-logo"/>
+                    </a>
+                    <p>python, flask, gcp<br/>사업기획&서비스기획 / CJENM 콘텐츠 사업전략팀, <br/>VCNV(타다) 드라이버 플랫폼 팀장 <br/>샌드박스네트워크 엔터 사업 부문장</p>
+                </div>
+            </div>
+            <!-- 추가 팀 멤버들을 위한 div를 계속해서 추가하세요. -->
+            <div class="team-member">
+                <img src="{{ url_for('static', filename='image/c.jpg') }}" alt="팀 멤버 2" class="team-member-photo">
+                <div class="team-member-info mem2">
+                    <h3>최지민</h3>
+                    <a href="https://github.com/timmyeos" target="_blank">
+                        <img src="{{ url_for('static', filename='image/github.png') }}" alt="GitHub" class="github-logo"/>
+                    </a>
+                    <p>NLP 및 LangChain, Flask, Git<br/>
+                        프랑스어와 AI융합전공으로, <br/>언어와 기술을 결합하고자 하는 <br/>새싹 개발자 🌱<br/>
+                        다양한 딥러닝 프로젝트를 통해 <br/>자라나는 중입니다.</p>
+                </div>
+            </div>
+            <!-- 추가 팀 멤버들을 위한 div를 계속해서 추가하세요. -->
+            <div class="team-member">
+                <img src="{{ url_for('static', filename='image/p.jpg') }}" alt="팀 멤버 3" class="team-member-photo">
+                <div class="team-member-info">
+                    <h3>박영현</h3>
+                    <a href="https://github.com/yhp2205" target="_blank">
+                        <img src="{{ url_for('static', filename='image/github.png') }}" alt="GitHub" class="github-logo"/>
+                    </a>
+                    <p>Python, Flask, GCP<br/>통계학과 인지과학 연계전공<br/>AI 툴을 사용하여 보다 <br/>편리하고 정확한 아웃풋을 만들어<br/>내고자 노력합니다.</p>
+                </div>
+            </div>
+            <!-- 추가 팀 멤버들을 위한 div를 계속해서 추가하세요. -->
+            <div class="team-member">
+                <img src="{{ url_for('static', filename='image/n.jpg') }}" alt="팀 멤버 4" class="team-member-photo">
+                <div class="team-member-info">
+                    <h3>남경수</h3>
+                    <a href="https://github.com/username" target="_blank">
+                        <img src="{{ url_for('static', filename='image/github.png') }}" alt="GitHub" class="github-logo"/>
+                    </a>
+                    <p>Tts, Stable diffusion, <br/>Gpt store, Frontend<br/>새로운 기술들을 다루는 것을 <br/>즐깁니다.</p>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</section>
+
+
+
+
+
+<!-- Footer Section -->
+<footer>
+    <p>&copy; 2024 Your Company Name. All rights reserved.</p>
+</footer>
+
+
+
+<script src="{{ url_for('static', filename='js/intro_script.js') }}"></script>
+</body>
+</html>
