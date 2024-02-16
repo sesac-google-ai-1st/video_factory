@@ -13,9 +13,9 @@ print(f"BGM using device : {device}")
 
 class musicGen:
     def __init__(self):
-        self.processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+        self.processor = AutoProcessor.from_pretrained("facebook/musicgen-medium")
         self.model = MusicgenForConditionalGeneration.from_pretrained(
-            "facebook/musicgen-small"
+            "facebook/musicgen-medium"
         )
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = self.model.to(device)

@@ -10,7 +10,11 @@ import threading
 from apps.aieditor.func.music_gen import musicGen
 from apps.aieditor.func.tts_gan import voice_gan_wavenet
 from apps.aieditor.func.naver import voice_gan_naver
-from apps.aieditor.func.img_gan import img_gan_prompt, img_gan_dalle3, img_gen_sdxlturb
+from apps.aieditor.func.img_gan import (
+    img_gan_prompt,
+    img_gen_sd_dalle3,
+    img_gen_sdxlturb,
+)
 from apps.aieditor.func.video_edit import (
     add_static_image_to_video,
     backgroundmusic,
@@ -410,9 +414,8 @@ def video():
                 image_with_sub = sub_option
                 if model_option == "dalle3":
                     start_image = threading.Thread(
-                        target=img_gan_dalle3,
+                        target=img_gen_sd_dalle3,
                         args=(
-                            api_key,
                             script_list,
                             dalle_prompts,
                             image_path,
