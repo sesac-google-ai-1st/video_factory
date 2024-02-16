@@ -28,7 +28,7 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 
 # session 사용을 위해 secret key를 설정
-app.config["SECRET_KEY"] = os.getenv("secret_key")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 # openai api key 이건 삭제하고 업로드
@@ -44,13 +44,13 @@ def before_request():
     # 세션에 사용자 ID가 없는 경우 새로운 ID 생성
     if "user_id" not in session:
         session["user_id"] = str(uuid.uuid4())  # 사용자 고유한 ID 생성
-    print("user_id:", session.get("user_id"))
+    # print("user_id:", session.get("user_id"))
 
 
 def get_user_storage_path():
     # 사용자별 저장 경로를 생성하여 반환
     user_path = os.path.join("generated", session["user_id"])
-    print("user_경로:", user_path)
+    # print("user_경로:", user_path)
     return user_path
 
 
