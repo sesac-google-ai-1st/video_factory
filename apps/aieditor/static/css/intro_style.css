@@ -103,6 +103,9 @@ header .logo {
     color: #000; /* 로그인 버튼 텍스트 색상 */
     font-weight: bold; /* 글씨 굵게 */
     font-size: 1.05em; /* 기본 글씨 크기보다 10% 더 크게 */
+    
+    visibility: hidden; /* 로그인 버튼을 숨기지만, 공간은 유지 */
+    
 }
 
 /********************************************************************/
@@ -208,7 +211,7 @@ main#content {
     flex-direction: column;
     align-items: center;
     justify-content: start;
-    padding: 70px 20px;
+    padding: 70px 0px;
     position: relative;
 }
 
