@@ -149,7 +149,7 @@ main {
 /* 버튼 */
 #get-started-button {
     text-decoration: none;
-    background-color: #007bff;
+    background-color: #1b9cff;
     color: #fff;
     border: 2px solid transparent; /* 기본 상태에서 테두리를 투명하게 설정 */
     padding: 10px 20px;
@@ -258,6 +258,12 @@ main#content {
     width: 70px; /* 로고 크기 조정 */
     height: 70px;
     /* 각 이미지의 위치를 지정할 추가 스타일 필요 */
+}
+
+.resized-image {
+    width: auto; /* 원하는 너비로 설정 */
+    height: 50px; /* 높이를 자동으로 조절하여 비율 유지 */
+    margin-right: 200px; 
 }
 
 
@@ -482,7 +488,7 @@ main#content {
 .video-modal {
     display: none;
     position: fixed;
-    top: 0;
+    top: 50px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -496,6 +502,7 @@ main#content {
 
 /* 비디오 모달 컨테이너 */
 .video-modal-content {
+    top: 5%;
     width: 1200px;
     height: 800px;
     position: relative;
@@ -504,7 +511,8 @@ main#content {
 
 /* 모달 내 비디오 */
 .video-modal-content video {
-    width: 100%;
+    padding:40px;
+    width: 90%;
     height: auto;
 }
 

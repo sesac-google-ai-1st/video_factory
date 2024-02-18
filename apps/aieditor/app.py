@@ -1,6 +1,7 @@
 import os
 import uuid
 from dotenv import load_dotenv
+import shutil
 
 from flask import Flask, render_template, send_from_directory, send_file
 from flask import request, Response, url_for, redirect, session, flash
@@ -30,6 +31,9 @@ socketio = SocketIO(app)
 # session 사용을 위해 secret key를 설정
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
+# 세션의 유지 시간을 10분으로 설정 (초 단위)
+app.permanent_session_lifetime = 600 
 
 # openai api key 이건 삭제하고 업로드
 api_key = ""
@@ -68,6 +72,15 @@ def handle_stop_candidate_exception(error):
         500,
     )
 
+# 특정 에러 처리기 함수 정의
+@app.errorhandler(ValueError)
+def handle_value_error(error):
+    # 세션 만료로 저장된 정보 못 찾아오면, 첫페이지로 리다이렉트
+    if str(error) == "Invalid llm_name. Supported values are 'gpt' and 'gemini'.":
+        return redirect(url_for('main'))
+    else:
+        # 기타 예외 처리
+        return "An error occurred", 500  # 예를 들어, 500 에러와 함께 간단한 메시지 반환
 
 @app.route("/", methods=["GET", "POST"])
 def main():
@@ -321,7 +334,7 @@ def show_images(filename):
 def handle_video_generation_complete():
     print("video_generation_complete 이벤트를 발생시킵니다.")
     # 클라이언트에게 이벤트를 보냄
-    emit("video_generation_complete", namespace="/video", broadcast=True)
+    socketio.emit("video_generation_complete", namespace="/video")
 
 
 def progress_callback(description, progress, step_now=0, step_total=3, image_url=None):
@@ -495,29 +508,49 @@ def download_video():
     없으면 그 이전 단계인 merge_video를 보냅니다.
 
     """
-    video_path = os.path.join(get_user_storage_path(), "finalclip")
+    video_path = os.path.join("apps", "aieditor", get_user_storage_path(), "finalclip")
     file = "final_video.mp4"
     if os.path.exists(os.path.join(video_path, file)):
         filename = "final_video.mp4"
     else:
         filename = "merge_video.mp4"
 
+    # 파일을 이동할 목적지
+    new_filename = 'video.mp4'
+    dest_file_path = os.path.join("apps", "aieditor", "download", session.get("user_id"))
+
+    os.makedirs(dest_file_path, exist_ok=True)
+    
+    src_path = os.path.join("apps", "aieditor", get_user_storage_path())
+    # source_directory 가 있다면, 이동 후 삭제
+    if os.path.exists(src_path):
+    # 파일을 목적지로 이동하고 이름을 변경
+        if os.path.exists(os.path.join(dest_file_path, new_filename)):
+            os.remove(os.path.join(dest_file_path, new_filename))
+        if os.path.exists(os.path.join(dest_file_path, "sub.srt")):
+            os.remove(os.path.join(dest_file_path, "sub.srt"))
+        os.rename(os.path.join(video_path, filename), os.path.join(dest_file_path, new_filename))
+        os.rename(os.path.join("apps", "aieditor", get_user_storage_path(), "sub.srt"), os.path.join(dest_file_path, "sub.srt"))
+
+    # source_directory를 삭제
+        shutil.rmtree(src_path)
+
     # 세션 지우기
     # session.clear()
 
-    return render_template("download.html", filename=filename, subtitle="sub.srt")
+    return render_template("download.html", filename=new_filename, subtitle="sub.srt")
 
 
 # subtitle과 video 다운로드를 위한 코드
 @app.route("/download/<path:filename>")
 def download(filename):
-    finalclip_folder_path = os.path.join(get_user_storage_path(), "finalclip")
+    finalclip_folder_path = os.path.join("download", session.get("user_id"))
     return send_from_directory(finalclip_folder_path, filename, as_attachment=True)
 
 
 @app.route("/download_sub", methods=["GET"])
 def download_sub():
-    sub_path = os.path.join(get_user_storage_path(), "sub.srt")
+    sub_path = os.path.join("download", session.get("user_id"), "sub.srt")
     return send_file(sub_path, as_attachment=True)
 
 
